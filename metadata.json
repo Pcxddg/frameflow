@@ -1,0 +1,7 @@
+{
+  "name": "FrameFlow",
+  "description": "Tablero de producción semanal para creadores de contenido y editores, con integración de IA.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

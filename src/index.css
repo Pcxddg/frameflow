@@ -1,0 +1,582 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ══════════════════════════════════════════════════════════════
+   THEME SYSTEM — 3 Premium Themes via CSS Custom Properties
+   Applied via data-theme="light|dark|soft" on <html>
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── LIGHT (Default) ─────────────────────────────── */
+:root,
+[data-theme="light"] {
+  --ff-primary: #2563eb;
+  --ff-primary-dark: #1d4ed8;
+  --ff-accent: #6366f1;
+
+  /* Header */
+  --ff-header-from: #1d4ed8;
+  --ff-header-via: #2563eb;
+  --ff-header-to: #4f46e5;
+  --ff-header-text: #ffffff;
+  --ff-header-btn: rgba(255, 255, 255, 0.12);
+  --ff-header-btn-hover: rgba(255, 255, 255, 0.22);
+  --ff-header-border: rgba(255, 255, 255, 0.10);
+
+  /* Surfaces */
+  --ff-bg: #f1f5f9;
+  --ff-bg-subtle: #f8fafc;
+  --ff-bg-board-from: #f1f5f9;
+  --ff-bg-board-via: #f9fafb;
+  --ff-bg-board-to: rgba(239,246,255,0.3);
+  --ff-surface: rgba(255, 255, 255, 0.90);
+  --ff-surface-solid: #ffffff;
+  --ff-surface-muted: #f8fafc;
+  --ff-surface-raised: #ffffff;
+  --ff-surface-hover: #f9fafb;
+
+  /* Text */
+  --ff-text-primary: #111827;
+  --ff-text-secondary: #4b5563;
+  --ff-text-tertiary: #9ca3af;
+  --ff-text-inverse: #ffffff;
+
+  /* Borders */
+  --ff-border: rgba(0, 0, 0, 0.06);
+  --ff-border-medium: #e5e7eb;
+  --ff-border-strong: #d1d5db;
+
+  /* Cards & Columns */
+  --ff-card-bg: #ffffff;
+  --ff-card-hover: #fafbfc;
+  --ff-column-bg: rgba(255, 255, 255, 0.90);
+  --ff-column-border: rgba(229, 231, 235, 0.60);
+
+  /* Filter bar */
+  --ff-filter-bg: rgba(255, 255, 255, 0.70);
+  --ff-filter-active: #ffffff;
+  --ff-filter-text: #6b7280;
+  --ff-filter-text-active: #1d4ed8;
+
+  /* Modal / Panel */
+  --ff-modal-bg: #ffffff;
+  --ff-modal-overlay: rgba(0, 0, 0, 0.40);
+  --ff-modal-footer: #f9fafb;
+
+  /* Inputs */
+  --ff-input-bg: #f9fafb;
+  --ff-input-border: #e5e7eb;
+  --ff-input-focus: #2563eb;
+
+  /* Shadows */
+  --ff-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --ff-shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --ff-shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 10px -4px rgba(0, 0, 0, 0.04);
+  --ff-shadow-xl: 0 20px 40px -5px rgba(0, 0, 0, 0.12), 0 8px 16px -6px rgba(0, 0, 0, 0.06);
+
+  /* Scrollbar */
+  --ff-scroll-thumb: rgba(0, 0, 0, 0.15);
+  --ff-scroll-thumb-hover: rgba(0, 0, 0, 0.25);
+  --ff-scroll-track: rgba(0, 0, 0, 0.04);
+
+  /* Misc */
+  --ff-radius: 0.75rem;
+  --ff-radius-lg: 1rem;
+  --ff-radius-xl: 1.25rem;
+  --ff-glass-bg: rgba(255, 255, 255, 0.55);
+  --ff-glass-border: rgba(255, 255, 255, 0.35);
+  --ff-info-bg: rgba(59, 130, 246, 0.10);
+  --ff-info-border: rgba(59, 130, 246, 0.18);
+  --ff-info-text: #1d4ed8;
+  --ff-success-bg: rgba(16, 185, 129, 0.12);
+  --ff-success-border: rgba(16, 185, 129, 0.22);
+  --ff-success-text: #047857;
+  --ff-warning-bg: rgba(245, 158, 11, 0.12);
+  --ff-warning-border: rgba(245, 158, 11, 0.22);
+  --ff-warning-text: #b45309;
+  --ff-danger-bg: rgba(239, 68, 68, 0.11);
+  --ff-danger-border: rgba(239, 68, 68, 0.22);
+  --ff-danger-text: #b91c1c;
+}
+
+/* ── DARK ────────────────────────────────────────── */
+[data-theme="dark"] {
+  --ff-primary: #5b8cff;
+  --ff-primary-dark: #4578f2;
+  --ff-accent: #8ba8ff;
+
+  --ff-header-from: #111418;
+  --ff-header-via: #151a20;
+  --ff-header-to: #1a2028;
+  --ff-header-text: #eef2f6;
+  --ff-header-btn: rgba(255, 255, 255, 0.06);
+  --ff-header-btn-hover: rgba(255, 255, 255, 0.11);
+  --ff-header-border: rgba(255, 255, 255, 0.05);
+
+  --ff-bg: #101317;
+  --ff-bg-subtle: #151a20;
+  --ff-bg-board-from: #101317;
+  --ff-bg-board-via: #141920;
+  --ff-bg-board-to: rgba(91, 140, 255, 0.08);
+  --ff-surface: rgba(26, 31, 38, 0.90);
+  --ff-surface-solid: #1a1f26;
+  --ff-surface-muted: #141920;
+  --ff-surface-raised: #202730;
+  --ff-surface-hover: #252d37;
+
+  --ff-text-primary: #edf2f7;
+  --ff-text-secondary: #c2cad4;
+  --ff-text-tertiary: #8793a2;
+  --ff-text-inverse: #101317;
+
+  --ff-border: rgba(255, 255, 255, 0.06);
+  --ff-border-medium: #2d3642;
+  --ff-border-strong: #3a4554;
+
+  --ff-card-bg: #1a1f26;
+  --ff-card-hover: #232b35;
+  --ff-column-bg: rgba(20, 25, 32, 0.92);
+  --ff-column-border: rgba(58, 69, 84, 0.56);
+
+  --ff-filter-bg: rgba(21, 26, 32, 0.82);
+  --ff-filter-active: #202730;
+  --ff-filter-text: #9aa5b4;
+  --ff-filter-text-active: #eaf0ff;
+
+  --ff-modal-bg: #161b22;
+  --ff-modal-overlay: rgba(0, 0, 0, 0.64);
+  --ff-modal-footer: #12171d;
+
+  --ff-input-bg: #11161c;
+  --ff-input-border: #2f3742;
+  --ff-input-focus: #5b8cff;
+
+  --ff-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.24);
+  --ff-shadow-md: 0 14px 30px -22px rgba(0, 0, 0, 0.72), 0 8px 16px -14px rgba(0, 0, 0, 0.48);
+  --ff-shadow-lg: 0 26px 46px -26px rgba(0, 0, 0, 0.78), 0 16px 28px -18px rgba(0, 0, 0, 0.58);
+  --ff-shadow-xl: 0 34px 64px -30px rgba(0, 0, 0, 0.82), 0 24px 42px -24px rgba(0, 0, 0, 0.62);
+
+  --ff-scroll-thumb: rgba(255, 255, 255, 0.14);
+  --ff-scroll-thumb-hover: rgba(255, 255, 255, 0.24);
+  --ff-scroll-track: rgba(255, 255, 255, 0.04);
+
+  --ff-glass-bg: rgba(26, 31, 38, 0.72);
+  --ff-glass-border: rgba(58, 69, 84, 0.36);
+  --ff-info-bg: rgba(91, 140, 255, 0.15);
+  --ff-info-border: rgba(91, 140, 255, 0.28);
+  --ff-info-text: #bfd0ff;
+  --ff-success-bg: rgba(34, 197, 94, 0.14);
+  --ff-success-border: rgba(34, 197, 94, 0.24);
+  --ff-success-text: #b8f3c9;
+  --ff-warning-bg: rgba(245, 158, 11, 0.15);
+  --ff-warning-border: rgba(245, 158, 11, 0.24);
+  --ff-warning-text: #f8d7a2;
+  --ff-danger-bg: rgba(239, 68, 68, 0.14);
+  --ff-danger-border: rgba(239, 68, 68, 0.24);
+  --ff-danger-text: #ffb8b8;
+}
+
+/* ── SOFT (Eye-care) ─────────────────────────────── */
+[data-theme="soft"] {
+  --ff-primary: #059669;
+  --ff-primary-dark: #047857;
+  --ff-accent: #10b981;
+
+  --ff-header-from: #065f46;
+  --ff-header-via: #047857;
+  --ff-header-to: #0d9488;
+  --ff-header-text: #ecfdf5;
+  --ff-header-btn: rgba(255, 255, 255, 0.10);
+  --ff-header-btn-hover: rgba(255, 255, 255, 0.18);
+  --ff-header-border: rgba(255, 255, 255, 0.08);
+
+  --ff-bg: #faf7f2;
+  --ff-bg-subtle: #fefcf8;
+  --ff-bg-board-from: #faf7f2;
+  --ff-bg-board-via: #fefcf8;
+  --ff-bg-board-to: rgba(236,253,245,0.3);
+  --ff-surface: rgba(255, 253, 248, 0.90);
+  --ff-surface-solid: #fffdf8;
+  --ff-surface-muted: #faf7f2;
+  --ff-surface-raised: #fffdf8;
+  --ff-surface-hover: #faf5ed;
+
+  --ff-text-primary: #1c1917;
+  --ff-text-secondary: #57534e;
+  --ff-text-tertiary: #a8a29e;
+  --ff-text-inverse: #ffffff;
+
+  --ff-border: rgba(120, 113, 108, 0.10);
+  --ff-border-medium: #e7e5e4;
+  --ff-border-strong: #d6d3d1;
+
+  --ff-card-bg: #fffdf8;
+  --ff-card-hover: #faf5ed;
+  --ff-column-bg: rgba(255, 253, 248, 0.85);
+  --ff-column-border: rgba(231, 229, 228, 0.60);
+
+  --ff-filter-bg: rgba(255, 253, 248, 0.70);
+  --ff-filter-active: #fffdf8;
+  --ff-filter-text: #78716c;
+  --ff-filter-text-active: #059669;
+
+  --ff-modal-bg: #fffdf8;
+  --ff-modal-overlay: rgba(28, 25, 23, 0.35);
+  --ff-modal-footer: #faf7f2;
+
+  --ff-input-bg: #faf7f2;
+  --ff-input-border: #e7e5e4;
+  --ff-input-focus: #059669;
+
+  --ff-shadow-sm: 0 1px 2px 0 rgba(120, 113, 108, 0.06);
+  --ff-shadow-md: 0 4px 12px -1px rgba(120, 113, 108, 0.08), 0 2px 4px -2px rgba(120, 113, 108, 0.05);
+  --ff-shadow-lg: 0 10px 25px -3px rgba(120, 113, 108, 0.10), 0 4px 10px -4px rgba(120, 113, 108, 0.05);
+  --ff-shadow-xl: 0 20px 40px -5px rgba(120, 113, 108, 0.14), 0 8px 16px -6px rgba(120, 113, 108, 0.08);
+
+  --ff-scroll-thumb: rgba(120, 113, 108, 0.18);
+  --ff-scroll-thumb-hover: rgba(120, 113, 108, 0.30);
+  --ff-scroll-track: rgba(120, 113, 108, 0.06);
+
+  --ff-glass-bg: rgba(255, 253, 248, 0.55);
+  --ff-glass-border: rgba(231, 229, 228, 0.35);
+  --ff-info-bg: rgba(5, 150, 105, 0.10);
+  --ff-info-border: rgba(5, 150, 105, 0.18);
+  --ff-info-text: #047857;
+  --ff-success-bg: rgba(16, 185, 129, 0.12);
+  --ff-success-border: rgba(16, 185, 129, 0.22);
+  --ff-success-text: #047857;
+  --ff-warning-bg: rgba(245, 158, 11, 0.11);
+  --ff-warning-border: rgba(245, 158, 11, 0.20);
+  --ff-warning-text: #b45309;
+  --ff-danger-bg: rgba(239, 68, 68, 0.10);
+  --ff-danger-border: rgba(239, 68, 68, 0.20);
+  --ff-danger-text: #b91c1c;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ══════════════════════════════════════════════════════════════ */
+html, body, #root {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--ff-bg);
+  color: var(--ff-text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.ff-panel {
+  background: var(--ff-surface-solid);
+  border: 1px solid var(--ff-border-medium);
+  box-shadow: var(--ff-shadow-sm);
+}
+
+.ff-panel-muted {
+  background: var(--ff-surface-muted);
+  border: 1px solid var(--ff-border);
+}
+
+.ff-input {
+  background: var(--ff-input-bg);
+  border: 1px solid var(--ff-input-border);
+  color: var(--ff-text-primary);
+}
+
+.ff-input::placeholder {
+  color: var(--ff-text-tertiary);
+}
+
+.ff-kicker {
+  color: var(--ff-text-tertiary);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ff-chip-soft {
+  background: var(--ff-bg-subtle);
+  color: var(--ff-text-secondary);
+  border: 1px solid var(--ff-border);
+}
+
+.ff-section-trigger {
+  color: var(--ff-text-primary);
+}
+
+.ff-section-trigger:hover {
+  background: var(--ff-surface-hover);
+}
+
+.ff-note {
+  color: var(--ff-text-secondary);
+}
+
+.ff-status-info {
+  background: var(--ff-info-bg);
+  border-color: var(--ff-info-border);
+  color: var(--ff-info-text);
+}
+
+.ff-status-success {
+  background: var(--ff-success-bg);
+  border-color: var(--ff-success-border);
+  color: var(--ff-success-text);
+}
+
+.ff-status-warning {
+  background: var(--ff-warning-bg);
+  border-color: var(--ff-warning-border);
+  color: var(--ff-warning-text);
+}
+
+.ff-status-danger {
+  background: var(--ff-danger-bg);
+  border-color: var(--ff-danger-border);
+  color: var(--ff-danger-text);
+}
+
+/* ── No-scrollbar utility ──────────────────────────── */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+/* ── Modern scrollbar utility ────────────────────── */
+.ff-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ff-scroll-thumb) transparent;
+}
+.ff-scrollbar::-webkit-scrollbar { width: 5px !important; height: 5px !important; }
+.ff-scrollbar::-webkit-scrollbar-track { background: transparent !important; border-radius: 999px !important; }
+.ff-scrollbar::-webkit-scrollbar-thumb { background: var(--ff-scroll-thumb) !important; border-radius: 999px !important; }
+.ff-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ff-scroll-thumb-hover) !important; }
+.ff-scrollbar::-webkit-scrollbar-button { display: none !important; width: 0 !important; height: 0 !important; }
+.ff-scrollbar::-webkit-scrollbar-corner { background: transparent !important; }
+
+/* ── Keyframes ────────────────────────────────────── */
+@keyframes ff-slide-up {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ff-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes ff-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes ff-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes ff-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* ── Utility Classes ──────────────────────────────── */
+.ff-glass {
+  background: var(--ff-glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--ff-glass-border);
+}
+
+.ff-slide-up { animation: ff-slide-up 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.ff-scale-in { animation: ff-scale-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.ff-fade-in  { animation: ff-fade-in 0.2s ease forwards; }
+.ff-slide-in-right { animation: ff-slide-in-right 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+.ff-card-shadow {
+  box-shadow: var(--ff-shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.ff-card-shadow:hover {
+  box-shadow: var(--ff-shadow-md);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK THEME — Global Tailwind class overrides
+   Remaps hardcoded Tailwind classes so all components auto-adapt
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  /* Backgrounds */
+  .bg-white { background-color: var(--ff-surface-solid) !important; }
+  .bg-white\/90 { background-color: color-mix(in srgb, var(--ff-surface-solid) 90%, transparent) !important; }
+  .bg-white\/80 { background-color: color-mix(in srgb, var(--ff-surface-solid) 80%, transparent) !important; }
+  .bg-white\/70 { background-color: color-mix(in srgb, var(--ff-surface-solid) 70%, transparent) !important; }
+  .bg-white\/15 { background-color: rgba(255, 255, 255, 0.10) !important; }
+  .bg-gray-50 { background-color: var(--ff-surface-muted) !important; }
+  .bg-gray-50\/80 { background-color: color-mix(in srgb, var(--ff-surface-muted) 80%, transparent) !important; }
+  .bg-gray-100 { background-color: var(--ff-surface-raised) !important; }
+  .bg-gray-100\/50 { background-color: color-mix(in srgb, var(--ff-surface-raised) 50%, transparent) !important; }
+  .bg-gray-200 { background-color: var(--ff-surface-hover) !important; }
+  .bg-gray-200\/70 { background-color: color-mix(in srgb, var(--ff-surface-hover) 70%, transparent) !important; }
+  .bg-slate-50 { background-color: var(--ff-surface-muted) !important; }
+  .bg-slate-50\/70 { background-color: color-mix(in srgb, var(--ff-surface-muted) 70%, transparent) !important; }
+  .bg-slate-100 { background-color: var(--ff-surface-raised) !important; }
+
+  /* Gradient backgrounds */
+  .from-slate-50 { --tw-gradient-from: var(--ff-bg) !important; }
+  .from-slate-100 { --tw-gradient-from: var(--ff-surface-muted) !important; }
+  .via-gray-50 { --tw-gradient-via: var(--ff-surface-muted) !important; }
+  .to-gray-50 { --tw-gradient-to: var(--ff-surface-solid) !important; }
+  .to-blue-50\/20 { --tw-gradient-to: rgba(91, 140, 255, 0.10) !important; }
+
+  /* Text */
+  .text-gray-900 { color: var(--ff-text-primary) !important; }
+  .text-gray-800 { color: var(--ff-text-primary) !important; }
+  .text-gray-700 { color: var(--ff-text-secondary) !important; }
+  .text-gray-600 { color: var(--ff-text-secondary) !important; }
+  .text-gray-500 { color: var(--ff-text-tertiary) !important; }
+  .text-gray-400 { color: color-mix(in srgb, var(--ff-text-tertiary) 80%, transparent) !important; }
+  .text-gray-300 { color: color-mix(in srgb, var(--ff-text-tertiary) 65%, white) !important; }
+  .text-slate-700 { color: var(--ff-text-secondary) !important; }
+  .text-slate-600 { color: var(--ff-text-secondary) !important; }
+  .text-slate-500 { color: var(--ff-text-tertiary) !important; }
+
+  /* Borders */
+  .border-gray-200 { border-color: var(--ff-border-medium) !important; }
+  .border-gray-200\/60 { border-color: color-mix(in srgb, var(--ff-border-medium) 60%, transparent) !important; }
+  .border-gray-100 { border-color: var(--ff-border) !important; }
+  .border-gray-100\/80 { border-color: color-mix(in srgb, var(--ff-border) 80%, transparent) !important; }
+  .border-gray-300 { border-color: var(--ff-border-strong) !important; }
+  .border-slate-200 { border-color: var(--ff-border-medium) !important; }
+
+  /* Hover states */
+  .hover\:bg-gray-50:hover { background-color: var(--ff-surface-hover) !important; }
+  .hover\:bg-gray-100:hover { background-color: var(--ff-surface-hover) !important; }
+  .hover\:bg-gray-200:hover { background-color: color-mix(in srgb, var(--ff-surface-hover) 92%, black) !important; }
+  .hover\:bg-white\/70:hover { background-color: color-mix(in srgb, var(--ff-surface-hover) 72%, transparent) !important; }
+  .hover\:text-gray-700:hover { color: var(--ff-text-primary) !important; }
+  .hover\:text-gray-600:hover { color: var(--ff-text-primary) !important; }
+  .hover\:border-gray-300:hover { border-color: var(--ff-border-strong) !important; }
+
+  /* Divide */
+  .divide-gray-100 > :not(:last-child) { border-color: var(--ff-border) !important; }
+
+  /* Subtle bg overrides for info/status cards */
+  .bg-blue-50 { background-color: var(--ff-info-bg) !important; }
+  .bg-purple-50 { background-color: rgba(130, 146, 255, 0.14) !important; }
+  .bg-red-50 { background-color: var(--ff-danger-bg) !important; }
+  .bg-red-50\/50 { background-color: color-mix(in srgb, var(--ff-danger-bg) 70%, transparent) !important; }
+  .bg-green-50 { background-color: var(--ff-success-bg) !important; }
+  .bg-yellow-50 { background-color: var(--ff-warning-bg) !important; }
+  .bg-orange-50 { background-color: rgba(249, 115, 22, 0.15) !important; }
+  .bg-emerald-50 { background-color: var(--ff-success-bg) !important; }
+  .bg-amber-50 { background-color: var(--ff-warning-bg) !important; }
+  .bg-rose-50 { background-color: var(--ff-danger-bg) !important; }
+
+  /* Specific interactive overrides */
+  .bg-blue-100 { background-color: color-mix(in srgb, var(--ff-info-bg) 92%, var(--ff-surface-solid)) !important; }
+  .bg-purple-100 { background-color: rgba(130, 146, 255, 0.18) !important; }
+  .bg-green-100 { background-color: color-mix(in srgb, var(--ff-success-bg) 94%, var(--ff-surface-solid)) !important; }
+  .bg-orange-100 { background-color: rgba(249, 115, 22, 0.18) !important; }
+  .bg-cyan-100 { background-color: rgba(34, 211, 238, 0.17) !important; }
+  .bg-amber-100 { background-color: color-mix(in srgb, var(--ff-warning-bg) 94%, var(--ff-surface-solid)) !important; }
+  .bg-rose-100 { background-color: color-mix(in srgb, var(--ff-danger-bg) 92%, var(--ff-surface-solid)) !important; }
+  .bg-emerald-100 { background-color: color-mix(in srgb, var(--ff-success-bg) 92%, var(--ff-surface-solid)) !important; }
+  .bg-slate-100 { background-color: var(--ff-surface-raised) !important; }
+
+  /* Border color overrides for status */
+  .border-red-200 { border-color: var(--ff-danger-border) !important; }
+  .border-blue-100 { border-color: var(--ff-info-border) !important; }
+  .border-yellow-200 { border-color: var(--ff-warning-border) !important; }
+  .border-green-200 { border-color: var(--ff-success-border) !important; }
+  .border-purple-200 { border-color: rgba(130, 146, 255, 0.28) !important; }
+  .border-indigo-200 { border-color: rgba(99, 102, 241, 0.28) !important; }
+  .border-amber-200 { border-color: var(--ff-warning-border) !important; }
+  .border-rose-200 { border-color: var(--ff-danger-border) !important; }
+  .border-emerald-200 { border-color: var(--ff-success-border) !important; }
+  .border-orange-200 { border-color: rgba(249, 115, 22, 0.26) !important; }
+  .border-blue-200 { border-color: var(--ff-info-border) !important; }
+
+  /* Focus states — prevent white flash on inputs */
+  .focus\:bg-white:focus { background-color: var(--ff-surface-solid) !important; }
+
+  /* Shadow overrides */
+  .shadow-sm { box-shadow: var(--ff-shadow-sm) !important; }
+  .shadow-xl { box-shadow: var(--ff-shadow-xl) !important; }
+
+  /* SVG strokes */
+  [stroke="#e5e7eb"] { stroke: var(--ff-border-medium) !important; }
+
+  /* Subtler color-50 overrides */
+  .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.13) !important; }
+  .bg-cyan-50 { background-color: rgba(34, 211, 238, 0.12) !important; }
+
+  /* Prose / Markdown content areas */
+  .prose { color: var(--ff-text-secondary) !important; }
+  .prose h1, .prose h2, .prose h3, .prose h4 { color: var(--ff-text-primary) !important; }
+  .prose p { color: var(--ff-text-secondary) !important; }
+  .prose strong { color: var(--ff-text-primary) !important; }
+  .prose li { color: var(--ff-text-secondary) !important; }
+  .prose a { color: var(--ff-primary) !important; }
+  .prose-p\:text-gray-700 p { color: var(--ff-text-secondary) !important; }
+
+  /* Checkbox borders */
+  .ring-gray-400 { --tw-ring-color: var(--ff-border-strong) !important; }
+
+  /* Tabs in team guide / settings */
+  .border-transparent { border-color: transparent !important; }
+
+  /* Placeholder text */
+  input::placeholder, textarea::placeholder, select { color: var(--ff-text-tertiary) !important; }
+
+  /* Select / option bg in dark mode */
+  select, option { background-color: var(--ff-surface-solid) !important; color: var(--ff-text-primary) !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SOFT THEME — Global Tailwind class overrides
+   ══════════════════════════════════════════════════════════════ */
+[data-theme="soft"] {
+  /* Backgrounds */
+  .bg-white { background-color: #fffdf8 !important; }
+  .bg-white\/90 { background-color: rgba(255,253,248,0.90) !important; }
+  .bg-white\/70 { background-color: rgba(255,253,248,0.70) !important; }
+  .bg-gray-50 { background-color: #faf7f2 !important; }
+  .bg-gray-100 { background-color: #f5f0e8 !important; }
+  .bg-gray-100\/50 { background-color: rgba(245,240,232,0.50) !important; }
+  .bg-gray-200 { background-color: #e7e5e4 !important; }
+
+  /* Gradient backgrounds */
+  .from-slate-50 { --tw-gradient-from: #faf7f2 !important; }
+  .from-slate-100 { --tw-gradient-from: #faf7f2 !important; }
+  .via-gray-50 { --tw-gradient-via: #fefcf8 !important; }
+  .to-gray-50 { --tw-gradient-to: #fefcf8 !important; }
+  .to-blue-50\/20 { --tw-gradient-to: rgba(236,253,245,0.2) !important; }
+
+  /* Text */
+  .text-gray-900 { color: #1c1917 !important; }
+  .text-gray-800 { color: #292524 !important; }
+  .text-gray-700 { color: #44403c !important; }
+  .text-gray-600 { color: #57534e !important; }
+  .text-gray-500 { color: #78716c !important; }
+  .text-gray-400 { color: #a8a29e !important; }
+
+  /* Borders */
+  .border-gray-200 { border-color: #e7e5e4 !important; }
+  .border-gray-100 { border-color: #f5f0e8 !important; }
+
+  /* Hover states */
+  .hover\:bg-gray-50:hover { background-color: #f5f0e8 !important; }
+  .hover\:bg-gray-100:hover { background-color: #ede8de !important; }
+
+  /* Subtle backgrounds */
+  .bg-blue-50 { background-color: rgba(5,150,105,0.08) !important; }
+  .bg-purple-50 { background-color: rgba(139,92,246,0.08) !important; }
+}
+

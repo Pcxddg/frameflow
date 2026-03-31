@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "gen-lang-client-0321385325"
+  },
+  "targets": {
+    "gen-lang-client-0321385325": {
+      "hosting": {
+        "jesus-frameflow": [
+          "jesus-frameflow"
+        ]
+      }
+    }
+  }
+}

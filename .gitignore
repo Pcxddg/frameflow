@@ -1,0 +1,15 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.agents/
+.firebase/
+pdf_pages/
+YouTube_Growth_Engineering.pdf
+
+# Firebase service account keys (NEVER commit these)
+gen-lang-client-*.json
