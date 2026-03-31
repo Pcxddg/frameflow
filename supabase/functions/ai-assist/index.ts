@@ -82,7 +82,11 @@ function normalizeContents(contents: unknown) {
 
 function normalizeSystemInstruction(systemInstruction: unknown) {
   if (!systemInstruction) return undefined;
-  return normalizeContent(systemInstruction, 'system');
+  // Gemini REST API expects systemInstruction with role "user" (not "system")
+  const content = normalizeContent(systemInstruction, 'user');
+  if (!content) return undefined;
+  // Remove role entirely — Gemini systemInstruction only needs parts
+  return { parts: content.parts };
 }
 
 Deno.serve(async (request) => {
@@ -128,6 +132,8 @@ Deno.serve(async (request) => {
       };
     }
 
+    console.log('Gemini request:', JSON.stringify({ model, contentsLen: contents.length, hasSystem: !!systemInstruction, hasTools: !!tools, hasGenConfig: !!geminiBody.generationConfig }));
+
     const geminiResponse = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -136,7 +142,14 @@ Deno.serve(async (request) => {
 
     if (!geminiResponse.ok) {
       const errText = await geminiResponse.text();
-      return jsonResponse({ error: errText }, geminiResponse.status);
+      console.error(`Gemini ${geminiResponse.status}: ${errText}`);
+      // Parse error to get a cleaner message when possible
+      let errorMessage = errText;
+      try {
+        const parsed = JSON.parse(errText);
+        errorMessage = parsed?.error?.message || errText;
+      } catch { /* keep raw text */ }
+      return jsonResponse({ error: errorMessage, status: geminiResponse.status }, geminiResponse.status);
     }
 
     const data = await geminiResponse.json();
