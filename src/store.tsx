@@ -37,6 +37,7 @@ import {
   createBoardRecord,
   deleteBoardRecord,
   getBackendReadNotice,
+  acceptPendingInvitations,
   inviteBoardMember as inviteBoardMemberRecord,
   removeBoardMember as removeBoardMemberRecord,
   saveBoardSnapshot,
@@ -469,10 +470,12 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       setCurrentBoardId(null);
       localStorage.removeItem('ff-current-board-id');
       if (nextUser) {
-        ensureProfile(nextUser).finally(() => {
-          setUser(nextUser);
-          setIsAuthReady(true);
-        });
+        ensureProfile(nextUser)
+          .then(() => acceptPendingInvitations(nextUser.uid, nextUser.emailLowercase).catch(() => {}))
+          .finally(() => {
+            setUser(nextUser);
+            setIsAuthReady(true);
+          });
       } else {
         setUser(null);
         setIsAuthReady(true);
@@ -1274,7 +1277,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const result = await inviteBoardMemberRecord(currentBoardId, normalizedEmail, role);
+      const result = await inviteBoardMemberRecord(currentBoardId, normalizedEmail, role, user.uid, board.title);
       if (!result.ok) return result;
       setReadNotice(null);
       return result;

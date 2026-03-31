@@ -407,6 +407,19 @@ as $$
   select public.board_role(target_board_id) in ('owner', 'editor');
 $$;
 
+create or replace function public.lookup_profile_by_email(target_email text)
+returns table(id uuid, email_lowercase text)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p.id, p.email_lowercase
+  from public.profiles p
+  where p.email_lowercase = lower(trim(target_email))
+  limit 1;
+$$;
+
 create or replace view public.board_online_members as
 select
   ps.board_id,

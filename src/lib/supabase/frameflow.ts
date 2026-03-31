@@ -74,12 +74,9 @@ function buildSupabaseAuthRedirectUrl() {
 
   try {
     const normalizedPath = authRedirectPath.startsWith('/') ? authRedirectPath : `/${authRedirectPath}`;
-    if (!isLocalHost(window.location.hostname)) {
-      return productionAuthRedirectUrl;
-    }
     return new URL(normalizedPath, window.location.origin).toString();
   } catch {
-    return productionAuthRedirectUrl;
+    return window.location.origin;
   }
 }
 
@@ -794,29 +791,87 @@ export async function saveBoardSnapshot(board: Board, auditEvents: AuditEvent[] 
   }
 }
 
-export async function inviteBoardMember(boardId: string, email: string, role: Exclude<MemberRole, 'owner'>) {
+export async function inviteBoardMember(
+  boardId: string,
+  email: string,
+  role: Exclude<MemberRole, 'owner'>,
+  inviterUserId: string,
+  boardTitle: string,
+) {
   const normalizedEmail = normalizeEmail(email);
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id, email_lowercase')
-    .eq('email_lowercase', normalizedEmail)
-    .maybeSingle();
+  const { data: rows, error: profileError } = await supabase
+    .rpc('lookup_profile_by_email', { target_email: normalizedEmail });
 
   if (profileError) throw profileError;
-  if (!profile) {
-    return { ok: false as const, error: 'Esa persona aun no tiene perfil en FrameFlow con ese correo.' };
+  const profile = rows?.[0] ?? null;
+
+  if (profile) {
+    // User already has an account — add them directly
+    const { error } = await supabase.from('board_members').upsert({
+      board_id: boardId,
+      user_id: profile.id,
+      email_lowercase: normalizedEmail,
+      role,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'board_id,user_id' });
+    if (error) throw error;
+    return { ok: true as const };
   }
 
-  const { error } = await supabase.from('board_members').upsert({
-    board_id: boardId,
-    user_id: profile.id,
-    email_lowercase: normalizedEmail,
-    role,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'board_id,user_id' });
+  // User doesn't have an account yet — create a pending invitation
+  // Check if a pending invite already exists
+  const { data: existing } = await supabase.from('invitations')
+    .select('id')
+    .eq('board_id', boardId)
+    .eq('invitee_email_lowercase', normalizedEmail)
+    .eq('status', 'pending')
+    .maybeSingle();
 
-  if (error) throw error;
-  return { ok: true as const };
+  if (existing) {
+    return { ok: true as const, pending: true };
+  }
+
+  const { error: inviteError } = await supabase.from('invitations').insert({
+    board_id: boardId,
+    board_title_snapshot: boardTitle,
+    invitee_email_lowercase: normalizedEmail,
+    inviter_user_id: inviterUserId,
+    role,
+    status: 'pending',
+  });
+
+  if (inviteError) throw inviteError;
+  return { ok: true as const, pending: true };
+}
+
+export async function acceptPendingInvitations(userId: string, email: string) {
+  const normalizedEmail = normalizeEmail(email);
+
+  const { data: pending, error: fetchError } = await supabase
+    .from('invitations')
+    .select('id, board_id, role')
+    .eq('invitee_email_lowercase', normalizedEmail)
+    .eq('status', 'pending');
+
+  if (fetchError || !pending?.length) return;
+
+  for (const invite of pending) {
+    const { error: memberError } = await supabase.from('board_members').upsert({
+      board_id: invite.board_id,
+      user_id: userId,
+      email_lowercase: normalizedEmail,
+      role: invite.role,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'board_id,user_id' });
+
+    if (!memberError) {
+      await supabase.from('invitations').update({
+        status: 'accepted',
+        responded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).eq('id', invite.id);
+    }
+  }
 }
 
 export async function removeBoardMember(boardId: string, email: string) {

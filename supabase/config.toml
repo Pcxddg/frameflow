@@ -162,6 +162,8 @@ additional_redirect_urls = [
   "http://localhost:3000/auth/callback",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:3000/auth/callback",
+  "https://frameflow.jealguacamalave.workers.dev",
+  "https://frameflow.jealguacamalave.workers.dev/auth/callback",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
