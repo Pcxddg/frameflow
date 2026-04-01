@@ -1016,6 +1016,15 @@ export async function deletePresenceSession(sessionId: string) {
   if (error) throw error;
 }
 
+/** Remove all previous sessions for this user (stale tabs, unreliable unload, etc.) */
+export async function cleanupStaleSessions(userId: string, keepSessionId?: string) {
+  let query = supabase.from('presence_sessions').delete().eq('user_id', userId);
+  if (keepSessionId) {
+    query = query.neq('id', keepSessionId);
+  }
+  await query;
+}
+
 export async function fetchAuditEvents(boardId: string) {
   const { data, error } = await supabase
     .from('audit_events')

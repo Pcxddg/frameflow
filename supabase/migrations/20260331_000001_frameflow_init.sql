@@ -421,7 +421,7 @@ as $$
 $$;
 
 create or replace view public.board_online_members as
-select
+select distinct on (ps.board_id, ps.user_id)
   ps.board_id,
   ps.user_id,
   ps.email_lowercase,
@@ -433,7 +433,8 @@ select
   ps.updated_at
 from public.presence_sessions ps
 where ps.is_online = true
-  and ps.last_heartbeat_at > timezone('utc', now()) - interval '75 seconds';
+  and ps.last_heartbeat_at > timezone('utc', now()) - interval '75 seconds'
+order by ps.board_id, ps.user_id, ps.last_heartbeat_at desc;
 
 create or replace view public.board_health as
 select

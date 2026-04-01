@@ -1,5 +1,6 @@
 import {
   appendPresenceEvent,
+  cleanupStaleSessions,
   deletePresenceSession,
   upsertPresenceSession,
 } from './supabase/frameflow';
@@ -124,9 +125,12 @@ export function createPresenceController(user: AppUser, initialContext: Presence
     }
   };
 
-  ensureHeartbeat();
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  void syncPresence();
+  // Clean up stale sessions from previous tabs/reloads before starting
+  void cleanupStaleSessions(user.uid, sessionId).catch(() => {}).then(() => {
+    ensureHeartbeat();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    void syncPresence();
+  });
 
   return {
     updateContext(nextContext) {
