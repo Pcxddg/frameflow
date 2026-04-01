@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   AuditEvent,
@@ -20,6 +20,7 @@ import {
 import { mergeWorkflowConfig } from './lib/workflowPlans';
 import { normalizeCardForPersistence } from './lib/audit';
 import { resolveBoardSeoConfig } from './lib/videoSeoConfig';
+import { getCurrentUserRole, normalizeMemberEmail, stabilizeBoardMembership } from './lib/boardMembership';
 import {
   bootstrapMinimalFlow,
   buildOptimizedVideoFlow,
@@ -119,9 +120,6 @@ interface BoardContextType {
 }
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
 
 function trackPublishReadyTransition(board: Board, previousCard: Card, nextCard: Card) {
   const previousExecution = buildVideoExecutionSnapshot(previousCard, board);
@@ -155,7 +153,7 @@ function clearStoredBoardSelection(uid?: string | null) {
 
 function getEmailVariants(email: string) {
   const trimmedEmail = email.trim();
-  return [...new Set([trimmedEmail, normalizeEmail(trimmedEmail)].filter(Boolean))];
+  return [...new Set([trimmedEmail, normalizeMemberEmail(trimmedEmail)].filter(Boolean))];
 }
 
 function isValidEmailFormat(email: string) {
@@ -167,31 +165,6 @@ function isPresenceFresh(lastHeartbeatAt?: string) {
   const timestamp = new Date(lastHeartbeatAt).getTime();
   if (Number.isNaN(timestamp)) return false;
   return Date.now() - timestamp < 75_000;
-}
-
-function deriveMemberRoles(ownerEmailLowercase: string, members: string[], existingRoles?: Record<string, MemberRole>) {
-  const normalizedOwnerEmail = normalizeEmail(ownerEmailLowercase);
-  const normalizedMembers = [...new Set(members.map(normalizeEmail).filter(Boolean))];
-  const safeMembers = normalizedOwnerEmail
-    ? [normalizedOwnerEmail, ...normalizedMembers.filter((email) => email !== normalizedOwnerEmail)]
-    : normalizedMembers;
-
-  const nextRoles: Record<string, MemberRole> = {};
-
-  safeMembers.forEach((email, index) => {
-    if (email === normalizedOwnerEmail || index === 0) {
-      nextRoles[email] = 'owner';
-      return;
-    }
-
-    const previousRole = existingRoles?.[email];
-    nextRoles[email] = previousRole === 'viewer' ? 'viewer' : 'editor';
-  });
-
-  return {
-    members: safeMembers,
-    memberRoles: nextRoles,
-  };
 }
 
 function stripUndefinedDeep<T>(value: T): T {
@@ -210,44 +183,22 @@ function stripUndefinedDeep<T>(value: T): T {
   return value;
 }
 
-function getFirestoreErrorCode(error: unknown) {
-  return (error as { code?: string })?.code || '';
-}
-
-function getFirestoreReadNotice(error: unknown) {
-  const code = getFirestoreErrorCode(error);
-  const message = (error as { message?: string })?.message || '';
-  const normalized = `${code} ${message}`.toLowerCase();
-
-  if (normalized.includes('resource-exhausted') || normalized.includes('quota')) {
-    return 'Firebase alcanzo la cuota diaria de lecturas. FrameFlow seguira usando la ultima copia local disponible hasta que la cuota se reinicie o migremos la base a una Firestore standard.';
-  }
-
-  if (normalized.includes('unavailable') || normalized.includes('network') || normalized.includes('failed-precondition')) {
-    return 'Firebase esta temporalmente inestable. FrameFlow seguira mostrando la ultima copia local mientras recupera la conexion.';
-  }
-
-  return null;
-}
-
 function hydrateBoardCards(nextBoard: Board): Board {
-  const ownerEmailLowercase = normalizeEmail(nextBoard.members?.[0] || '');
-  const { members, memberRoles } = deriveMemberRoles(ownerEmailLowercase, nextBoard.members || [], nextBoard.memberRoles);
-
-  return {
+  const { members, memberRoles } = stabilizeBoardMembership(nextBoard.members || [], nextBoard.memberRoles);
+  const normalizedBoard = {
     ...nextBoard,
     members,
     memberRoles,
+  };
+
+  return {
+    ...normalizedBoard,
     cards: Object.fromEntries(
       Object.entries(nextBoard.cards || {}).map(([cardId, card]) => {
-        const normalizedCard = normalizeCardForPersistence(card, nextBoard);
+        const normalizedCard = normalizeCardForPersistence(card, normalizedBoard);
         return [
           cardId,
-          applyProductionFlowDerivedFields(normalizedCard, {
-            ...nextBoard,
-            members,
-            memberRoles,
-          }),
+          applyProductionFlowDerivedFields(normalizedCard, normalizedBoard),
         ];
       })
     ),
@@ -371,22 +322,6 @@ function resolveKickoffModeForCard(board: Board, cardId: string): ProductionWork
   return plannedInFlight < cadence ? 'planned' : 'extra';
 }
 
-function getBoardRole(board: Board | null, user: AppUser | null): MemberRole | null {
-  if (!board || !user) return null;
-
-  if (board.ownerId === user.uid) return 'owner';
-
-  const normalizedEmail = user.emailLowercase;
-  const declaredRole = board.memberRoles?.[normalizedEmail];
-  if (declaredRole) return declaredRole;
-
-  if ((board.members || []).some((member) => normalizeEmail(member) === normalizedEmail)) {
-    return 'editor';
-  }
-
-  return null;
-}
-
 export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -397,7 +332,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [boardPresenceEvents, setBoardPresenceEvents] = useState<BoardPresenceEvent[]>([]);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
-  const currentUserRole = getBoardRole(board, user);
+  const boardRef = useRef<Board | null>(null);
+  const persistQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const latestPersistMutationRef = useRef(0);
+  const currentUserRole = getCurrentUserRole(board, user);
   const isBoardOwner = currentUserRole === 'owner';
   const canEditBoard = currentUserRole === 'owner' || currentUserRole === 'editor';
   const canInviteMembers = currentUserRole === 'owner';
@@ -457,6 +395,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     return () => window.clearTimeout(timer);
   }, [saveState]);
+
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState((nextUser) => {
@@ -608,7 +550,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   }, [currentBoardId, user, isAuthReady]);
 
   useEffect(() => {
-    if (!board || !currentBoardId) {
+    if (!currentBoardId) {
       setBoardPresenceMembers([]);
       setBoardPresenceEvents([]);
       return;
@@ -617,9 +559,21 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = subscribePresence(
       currentBoardId,
       ({ members, events }) => {
-        const allowedMembers = new Set((board.members || []).map((member) => normalizeEmail(member)));
-        setBoardPresenceMembers(members.filter((member) => allowedMembers.has(normalizeEmail(member.emailLowercase))));
-        setBoardPresenceEvents(events.filter((event) => allowedMembers.has(normalizeEmail(event.emailLowercase))));
+        const activeBoard = boardRef.current;
+        if (!activeBoard) {
+          setBoardPresenceMembers([]);
+          setBoardPresenceEvents([]);
+          return;
+        }
+
+        const { memberRoles } = stabilizeBoardMembership(activeBoard.members || [], activeBoard.memberRoles);
+        const allowedMembers = new Set(Object.keys(memberRoles));
+        setBoardPresenceMembers(
+          members.filter((member) => allowedMembers.has(normalizeMemberEmail(member.emailLowercase)))
+        );
+        setBoardPresenceEvents(
+          events.filter((event) => allowedMembers.has(normalizeMemberEmail(event.emailLowercase)))
+        );
       },
       (error) => {
         console.error('Error fetching board presence from Supabase:', error);
@@ -629,7 +583,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     );
 
     return () => unsubscribe();
-  }, [board?.id, currentBoardId]);
+  }, [currentBoardId]);
 
   const createBoard = async (title: string) => {
     if (!user) return;
@@ -654,41 +608,62 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
   const persistBoardSnapshot = async (updatedBoard: Board, options?: { auditEvents?: AuditEvent[] }) => {
     const targetBoardId = updatedBoard.id || currentBoardId;
-    if (!targetBoardId || !user || !board || !canEditBoard) {
+    if (!targetBoardId || !user || !canEditBoard) {
       console.warn('persistBoardSnapshot: skipped', {
         targetBoardId: !!targetBoardId,
         user: !!user,
-        board: !!board,
         canEditBoard,
       });
       return;
     }
 
-    const previousBoard = board;
+    const previousBoard = boardRef.current;
     const hydratedBoard = hydrateBoardCards(updatedBoard);
     const nextBoard = stripUndefinedDeep({
       ...hydratedBoard,
-      members: updatedBoard.members,
-      memberRoles: updatedBoard.memberRoles,
       updatedAt: new Date().toISOString(),
     });
+    const mutationId = latestPersistMutationRef.current + 1;
+    latestPersistMutationRef.current = mutationId;
+
+    setSaveState('saving');
+    setBoard(nextBoard);
+    boardRef.current = nextBoard;
+    setBoards((previousBoards) => {
+      const exists = previousBoards.some((item) => item.id === targetBoardId);
+      if (!exists) return [nextBoard, ...previousBoards];
+      return previousBoards.map((item) => (item.id === targetBoardId ? nextBoard : item));
+    });
+    upsertCachedBoard(user.uid, nextBoard);
+
+    const savePromise = persistQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        await saveBoardSnapshot(nextBoard, options?.auditEvents || []);
+        if (mutationId === latestPersistMutationRef.current) {
+          setReadNotice(null);
+          setSaveState('saved');
+        }
+      });
+
+    persistQueueRef.current = savePromise.catch(() => undefined);
 
     try {
-      setSaveState('saving');
-      setBoard(nextBoard);
-      setBoards((previousBoards) => previousBoards.map((item) => (item.id === targetBoardId ? nextBoard : item)));
-      upsertCachedBoard(user.uid, nextBoard);
-      await saveBoardSnapshot(nextBoard, options?.auditEvents || []);
-      setReadNotice(null);
-      setSaveState('saved');
+      await savePromise;
     } catch (error) {
       console.error('Error updating board in Supabase:', error);
-      setBoard(previousBoard);
-      setBoards((previousBoards) => previousBoards.map((item) => (item.id === previousBoard.id ? previousBoard : item)));
-      upsertCachedBoard(user.uid, previousBoard);
-      const notice = getBackendReadNotice(error);
-      if (notice) setReadNotice(notice);
-      setSaveState('error');
+
+      if (mutationId === latestPersistMutationRef.current && previousBoard) {
+        setBoard(previousBoard);
+        boardRef.current = previousBoard;
+        setBoards((previousBoards) => previousBoards.map((item) => (
+          item.id === previousBoard.id ? previousBoard : item
+        )));
+        upsertCachedBoard(user.uid, previousBoard);
+        const notice = getBackendReadNotice(error);
+        if (notice) setReadNotice(notice);
+        setSaveState('error');
+      }
     }
   };
 
@@ -708,6 +683,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     try {
       setSaveState('saving');
       setBoard(nextBoard);
+      boardRef.current = nextBoard;
       setBoards((previousBoards) => previousBoards.map((item) => (item.id === nextBoard.id ? nextBoard : item)));
       upsertCachedBoard(user.uid, nextBoard);
       await updateBoardMetaRecord(board.id, updates);
@@ -716,6 +692,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error updating board meta in Supabase:', error);
       setBoard(previousBoard);
+      boardRef.current = previousBoard;
       setBoards((previousBoards) => previousBoards.map((item) => (item.id === previousBoard.id ? previousBoard : item)));
       upsertCachedBoard(user.uid, previousBoard);
       const notice = getBackendReadNotice(error);
@@ -724,7 +701,8 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     }
   };
   const addCard = (listId: string, title: string) => {
-    if (!board || !canEditBoard) return;
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
     const now = new Date().toISOString();
     const newCard: Card = {
       id: `card-${uuidv4()}`,
@@ -755,7 +733,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       interlinking: '',
       linkDrive: '',
       seoSourceText: '',
-      contentType: (board.defaultContentType as 'long' | 'short' | undefined) || undefined,
+      contentType: (activeBoard.defaultContentType as 'long' | 'short' | undefined) || undefined,
       keywords: '',
       storytelling: { queria: '', pero: '', porLoTanto: '' },
       postPublication: {},
@@ -769,11 +747,11 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       updatedAt: now,
     };
 
-    const bootstrapped = bootstrapMinimalFlow(newCard, board);
+    const bootstrapped = bootstrapMinimalFlow(newCard, activeBoard);
     newCard.productionFlow = bootstrapped.productionFlow;
     newCard.checklists = bootstrapped.checklists;
 
-    const newLists = board.lists.map((list) => {
+    const newLists = activeBoard.lists.map((list) => {
       if (list.id === listId) {
         return { ...list, cardIds: [...list.cardIds, newCard.id] };
       }
@@ -783,24 +761,25 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const auditEvent = createAuditEvent('card_created', newCard.id, {
       cardTitle: newCard.title,
       listId,
-      listTitle: board.lists.find((list) => list.id === listId)?.title || listId,
+      listTitle: activeBoard.lists.find((list) => list.id === listId)?.title || listId,
       contentType: newCard.contentType || 'undefined',
     });
 
     persistBoardSnapshot({
-      ...board,
+      ...activeBoard,
       lists: newLists,
-      cards: { ...board.cards, [newCard.id]: newCard },
+      cards: { ...activeBoard.cards, [newCard.id]: newCard },
     }, { auditEvents: auditEvent ? [auditEvent] : [] });
   };
 
   const createVideoFromFlow = (input: CreateVideoFromFlowInput) => {
-    if (!board || !canEditBoard) return;
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
 
     const now = new Date().toISOString();
     const newCardId = `card-${uuidv4()}`;
-    const builtFlow = buildOptimizedVideoFlow(input, board, mergeWorkflowConfig(board.workflowConfig));
-    const targetListId = builtFlow.suggestedListId || board.lists[0]?.id;
+    const builtFlow = buildOptimizedVideoFlow(input, activeBoard, mergeWorkflowConfig(activeBoard.workflowConfig));
+    const targetListId = builtFlow.suggestedListId || activeBoard.lists[0]?.id;
     if (!targetListId) return;
 
     const newCard: Card = normalizeCardForPersistence({
@@ -849,9 +828,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       updatedAt: now,
       productionBrief: builtFlow.productionBrief,
       productionFlow: builtFlow.productionFlow,
-    }, board);
+    }, activeBoard);
 
-    const newLists = board.lists.map((list) => (
+    const newLists = activeBoard.lists.map((list) => (
       list.id === targetListId
         ? { ...list, cardIds: [...list.cardIds, newCard.id] }
         : list
@@ -860,7 +839,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const createdEvent = createAuditEvent('card_created', newCard.id, {
       cardTitle: newCard.title,
       listId: targetListId,
-      listTitle: board.lists.find((list) => list.id === targetListId)?.title || targetListId,
+      listTitle: activeBoard.lists.find((list) => list.id === targetListId)?.title || targetListId,
       contentType: newCard.contentType || 'long',
       seededByWizard: true,
     });
@@ -896,17 +875,17 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       .filter((event): event is AuditEvent => !!event);
 
     const nextBoard = {
-      ...board,
+      ...activeBoard,
       lists: newLists,
       cards: {
-        ...board.cards,
+        ...activeBoard.cards,
         [newCard.id]: newCard,
       },
     };
     const createdExecution = buildVideoExecutionSnapshot(newCard, nextBoard);
 
     trackProductEvent('video_created', {
-      board_id: board.id,
+      board_id: activeBoard.id,
       card_id: newCard.id,
       content_type: newCard.contentType || 'undefined',
       used_ai: !!input.usedAI,
@@ -921,8 +900,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCard = (cardId: string, updates: Partial<Card>) => {
-    if (!board || !canEditBoard) return;
-    const currentCard = board.cards[cardId];
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const currentCard = activeBoard.cards[cardId];
     if (!currentCard) return;
     if (Object.keys(updates).length === 0) return;
 
@@ -930,7 +910,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       ...currentCard,
       ...updates,
       updatedAt: new Date().toISOString(),
-    }, board);
+    }, activeBoard);
 
     const auditEvents: AuditEvent[] = [];
 
@@ -987,20 +967,21 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       if (event) auditEvents.push(event);
     }
 
-    trackPublishReadyTransition(board, currentCard, nextCard);
+    trackPublishReadyTransition(activeBoard, currentCard, nextCard);
 
     persistBoardSnapshot({
-      ...board,
+      ...activeBoard,
       cards: {
-        ...board.cards,
+        ...activeBoard.cards,
         [cardId]: nextCard,
       },
     }, { auditEvents });
   };
 
   const setProductionStageStatus = (cardId: string, stageId: ProductionStageId, status: ProductionStageStatus) => {
-    if (!board || !canEditBoard) return;
-    const currentCard = board.cards[cardId];
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const currentCard = activeBoard.cards[cardId];
     if (!currentCard?.productionFlow) return;
     const previousStage = currentCard.productionFlow.stages.find((item) => item.id === stageId);
 
@@ -1010,17 +991,17 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
         (stageId === 'idea' && status === 'done') ||
         (stageId !== 'idea' && (status === 'in_progress' || status === 'done' || status === 'blocked'))
       );
-    const kickoffMode = shouldKickoff ? resolveKickoffModeForCard(board, cardId) : undefined;
+    const kickoffMode = shouldKickoff ? resolveKickoffModeForCard(activeBoard, cardId) : undefined;
     const nextFlow = updateProductionStageStatus(currentCard.productionFlow, stageId, status, new Date().toISOString(), {
       kickoffMode,
     });
     const nextCard = applyProductionFlowDerivedFields({
       ...currentCard,
       productionFlow: nextFlow,
-    }, board);
+    }, activeBoard);
 
     const stage = nextFlow.stages.find((item) => item.id === stageId);
-    const nextExecution = buildVideoExecutionSnapshot(nextCard, board);
+    const nextExecution = buildVideoExecutionSnapshot(nextCard, activeBoard);
     const auditType: AuditEventType =
       status === 'done'
         ? 'stage_completed'
@@ -1038,7 +1019,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     if (status === 'done' && previousStage?.status !== 'done') {
       trackProductEvent('production_stage_completed', {
-        board_id: board.id,
+        board_id: activeBoard.id,
         card_id: cardId,
         content_type: nextCard.contentType || 'undefined',
         stage_id: stageId,
@@ -1047,20 +1028,21 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    trackPublishReadyTransition(board, currentCard, nextCard);
+    trackPublishReadyTransition(activeBoard, currentCard, nextCard);
 
     persistBoardSnapshot({
-      ...board,
+      ...activeBoard,
       cards: {
-        ...board.cards,
+        ...activeBoard.cards,
         [cardId]: nextCard,
       },
     }, { auditEvents: auditEvent ? [auditEvent] : [] });
   };
 
   const updateProductionStage = (cardId: string, stageId: ProductionStageId, updates: Partial<{ dueAt: string; notes: string }>) => {
-    if (!board || !canEditBoard) return;
-    const currentCard = board.cards[cardId];
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const currentCard = activeBoard.cards[cardId];
     if (!currentCard?.productionFlow) return;
 
     const previousStage = currentCard.productionFlow.stages.find((stage) => stage.id === stageId);
@@ -1068,7 +1050,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const nextCard = applyProductionFlowDerivedFields({
       ...currentCard,
       productionFlow: nextFlow,
-    }, board);
+    }, activeBoard);
 
     const auditEvents: AuditEvent[] = [];
     if (updates.dueAt && previousStage?.dueAt !== updates.dueAt) {
@@ -1083,33 +1065,35 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     }
 
     persistBoardSnapshot({
-      ...board,
+      ...activeBoard,
       cards: {
-        ...board.cards,
+        ...activeBoard.cards,
         [cardId]: nextCard,
       },
     }, { auditEvents });
   };
 
   const deleteCard = (cardId: string, listId: string) => {
-    if (!board || !canEditBoard) return;
-    const newLists = board.lists.map(list => {
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const newLists = activeBoard.lists.map(list => {
       if (list.id === listId) {
         return { ...list, cardIds: list.cardIds.filter(id => id !== cardId) };
       }
       return list;
     });
 
-    const newCards = { ...board.cards };
+    const newCards = { ...activeBoard.cards };
     delete newCards[cardId];
 
-    persistBoardSnapshot({ ...board, lists: newLists, cards: newCards });
+    persistBoardSnapshot({ ...activeBoard, lists: newLists, cards: newCards });
   };
 
   const moveCard = (sourceListId: string, destListId: string, _sourceIndex: number, destIndex: number, cardId: string) => {
-    if (!board || !canEditBoard) return;
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
     const now = new Date().toISOString();
-    const newLists = [...board.lists];
+    const newLists = [...activeBoard.lists];
     const sourceList = newLists.find(l => l.id === sourceListId)!;
     const destList = newLists.find(l => l.id === destListId)!;
 
@@ -1138,7 +1122,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       newLists[destListIndex] = { ...destList, cardIds: destCardIds };
     }
 
-    const card = normalizeCardForPersistence(board.cards[cardId], board);
+    const card = normalizeCardForPersistence(activeBoard.cards[cardId], activeBoard);
     const columnHistory = card.columnHistory || [{ listId: sourceListId, enteredAt: card.createdAt || now }];
     const updatedHistory = sourceListId !== destListId
       ? [...columnHistory, { listId: destListId, enteredAt: now }]
@@ -1172,23 +1156,23 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     let cardWithSyncedFlow = updatedCard;
     if (sourceListId !== destListId) {
       if (updatedCard.productionFlow) {
-        const flowUpdates = syncFlowToColumn(updatedCard, destListId, board);
+        const flowUpdates = syncFlowToColumn(updatedCard, destListId, activeBoard);
         if (flowUpdates) {
           cardWithSyncedFlow = { ...updatedCard, ...flowUpdates };
         }
       } else {
         // Bootstrap flow for legacy cards that don't have one
-        const bootstrapped = bootstrapMinimalFlow(updatedCard, board);
+        const bootstrapped = bootstrapMinimalFlow(updatedCard, activeBoard);
         cardWithSyncedFlow = { ...updatedCard, productionFlow: bootstrapped.productionFlow, checklists: [...updatedCard.checklists, ...bootstrapped.checklists] };
       }
     }
 
     const movedCardWithFlow = cardWithSyncedFlow.productionFlow
-      ? applyProductionFlowDerivedFields(cardWithSyncedFlow, board)
+      ? applyProductionFlowDerivedFields(cardWithSyncedFlow, activeBoard)
       : cardWithSyncedFlow;
 
     if (sourceListId !== destListId && movedCardWithFlow.productionFlow) {
-      const suggestion = getSuggestedFlowColumn(movedCardWithFlow, board);
+      const suggestion = getSuggestedFlowColumn(movedCardWithFlow, activeBoard);
       if (suggestion && suggestion.listId !== destListId) {
         const mismatchEvent = createAuditEvent('flow_column_mismatch_detected', cardId, {
           cardTitle: movedCardWithFlow.title,
@@ -1202,18 +1186,19 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     }
 
     persistBoardSnapshot({
-      ...board,
+      ...activeBoard,
       lists: newLists,
       cards: {
-        ...board.cards,
+        ...activeBoard.cards,
         [cardId]: movedCardWithFlow
       }
     }, { auditEvents });
   };
 
   const addChecklist = (cardId: string, templateName: keyof typeof CHECKLIST_TEMPLATES) => {
-    if (!board || !canEditBoard) return;
-    const card = board.cards[cardId];
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const card = activeBoard.cards[cardId];
     const newChecklist: Checklist = {
       id: `checklist-${uuidv4()}`,
       title: templateName,
@@ -1230,8 +1215,9 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleChecklistItem = (cardId: string, checklistId: string, itemId: string) => {
-    if (!board || !canEditBoard) return;
-    const card = board.cards[cardId];
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const card = activeBoard.cards[cardId];
     const newChecklists = card.checklists.map(checklist => {
       if (checklist.id === checklistId) {
         return {
@@ -1248,10 +1234,11 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleLabel = (cardId: string, label: Label) => {
-    if (!board || !canEditBoard) return;
-    const card = board.cards[cardId];
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !canEditBoard) return;
+    const card = activeBoard.cards[cardId];
     const hasLabel = card.labels.some(l => l.id === label.id);
-    
+
     const newLabels = hasLabel
       ? card.labels.filter(l => l.id !== label.id)
       : [...card.labels, label];
@@ -1263,21 +1250,22 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     email: string,
     role: Exclude<MemberRole, 'owner'>
   ): Promise<{ ok: boolean; error?: string }> => {
-    if (!board || !currentBoardId || !user || !canInviteMembers) {
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !currentBoardId || !user || !canInviteMembers) {
       return { ok: false, error: 'No tienes permisos para invitar personas a este canal.' };
     }
 
-    const normalizedEmail = normalizeEmail(email);
+    const normalizedEmail = normalizeMemberEmail(email);
     if (!normalizedEmail || !isValidEmailFormat(normalizedEmail)) {
       return { ok: false, error: 'Escribe un email valido.' };
     }
 
-    if (board.members.some((member) => normalizeEmail(member) === normalizedEmail)) {
+    if (activeBoard.members.some((member) => normalizeMemberEmail(member) === normalizedEmail)) {
       return { ok: false, error: 'Ese email ya tiene acceso al canal.' };
     }
 
     try {
-      const result = await inviteBoardMemberRecord(currentBoardId, normalizedEmail, role, user.uid, board.title);
+      const result = await inviteBoardMemberRecord(currentBoardId, normalizedEmail, role, user.uid, activeBoard.title);
       if (!result.ok) return result;
       setReadNotice(null);
       return result;
@@ -1290,9 +1278,10 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeMember = async (email: string) => {
-    if (!board || !currentBoardId || !user || !isBoardOwner) return;
+    const activeBoard = boardRef.current || board;
+    if (!activeBoard || !currentBoardId || !user || !isBoardOwner) return;
 
-    const normalizedEmail = normalizeEmail(email);
+    const normalizedEmail = normalizeMemberEmail(email);
     if (!normalizedEmail || normalizedEmail === user.emailLowercase) return;
 
     try {

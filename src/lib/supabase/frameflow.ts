@@ -19,7 +19,6 @@ type RealtimeUnsubscribe = () => void;
 const googleAuthEnabled = String(import.meta.env.VITE_SUPABASE_GOOGLE_ENABLED ?? 'true').toLowerCase() !== 'false';
 const authRedirectPath = (import.meta.env.VITE_SUPABASE_AUTH_REDIRECT_PATH ?? '/auth/callback').trim();
 const authRedirectUrlOverride = import.meta.env.VITE_SUPABASE_AUTH_REDIRECT_URL?.trim();
-const productionAuthRedirectUrl = 'https://jesus-frameflow.web.app/auth/callback';
 
 const DEFAULT_LABELS: Label[] = [
   { id: 'label-red', name: 'Urgente', color: 'red' },
@@ -772,12 +771,8 @@ export async function saveBoardSnapshot(board: Board, auditEvents: AuditEvent[] 
   const { error: boardError } = await supabase.from('boards').upsert(boardToDb(normalizedBoard));
   if (boardError) throw boardError;
 
-  if (listIds.length > 0) {
-    await runDeleteIfMissing('lists', normalizedBoard.id, listIds);
-  }
-  if (cardIds.length > 0) {
-    await runDeleteIfMissing('cards', normalizedBoard.id, cardIds);
-  }
+  await runDeleteIfMissing('lists', normalizedBoard.id, listIds);
+  await runDeleteIfMissing('cards', normalizedBoard.id, cardIds);
 
   await upsertChunks('lists', listRows, 'id');
   await upsertChunks('cards', cardRows, 'id');
@@ -823,7 +818,10 @@ export async function inviteBoardMember(
 ) {
   const normalizedEmail = normalizeEmail(email);
   const { data: rows, error: profileError } = await supabase
-    .rpc('lookup_profile_by_email', { target_email: normalizedEmail });
+    .rpc('lookup_profile_by_email', {
+      target_board_id: boardId,
+      target_email: normalizedEmail,
+    });
 
   if (profileError) throw profileError;
   const profile = rows?.[0] ?? null;

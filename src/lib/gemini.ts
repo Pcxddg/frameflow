@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { isSupabaseConfigured, supabase } from './supabase/client';
+import { canUseDirectGemini } from './aiRuntime';
 
 export const GEMINI_FLASH_MODEL = 'gemini-2.5-flash';
 export const GEMINI_FLASH_LITE_MODEL = 'gemini-2.0-flash-lite';
@@ -18,8 +19,10 @@ const MODEL_FALLBACKS: Record<string, string[]> = {
   [GEMINI_FLASH_MODEL]: ['gemini-2.0-flash', GEMINI_FLASH_LITE_MODEL],
 };
 const DIRECT_GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY?.trim();
-const DIRECT_GEMINI_ENABLED_IN_PROD = String(import.meta.env.VITE_ENABLE_DIRECT_GEMINI ?? 'false').toLowerCase() === 'true';
-const CAN_USE_DIRECT_GEMINI = !!DIRECT_GEMINI_API_KEY && (import.meta.env.DEV || DIRECT_GEMINI_ENABLED_IN_PROD);
+const CAN_USE_DIRECT_GEMINI = canUseDirectGemini({
+  apiKey: DIRECT_GEMINI_API_KEY,
+  isDevelopment: !!import.meta.env.DEV,
+});
 
 export interface GeminiGenerateContentRequest {
   model: string;

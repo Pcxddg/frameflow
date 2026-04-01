@@ -486,6 +486,20 @@ function parseDateSafe(value?: string | null) {
   return parsed;
 }
 
+function resolveSafeIsoDate(
+  value?: string | null,
+  fallback?: string | null,
+  nowIso = new Date().toISOString()
+) {
+  const parsed = parseDateSafe(value);
+  if (parsed) return parsed.toISOString();
+
+  const fallbackParsed = parseDateSafe(fallback);
+  if (fallbackParsed) return fallbackParsed.toISOString();
+
+  return nowIso;
+}
+
 export function getWorkingDaysElapsed(kickoffAt?: string | null, now = new Date()) {
   const kickoffDate = parseDateSafe(kickoffAt);
   if (!kickoffDate) return 0;
@@ -578,9 +592,15 @@ export function normalizeProductionFlow(flow?: ProductionFlow | null): Productio
   if (!flow?.stages?.length) return undefined;
 
   const stageOrder = new Map(OPTIMIZED_STAGE_ORDER.map((id, index) => [id, index]));
+  const publishAt = resolveSafeIsoDate(flow.publishAt, flow.createdFromWizardAt);
+  const createdFromWizardAt = resolveSafeIsoDate(flow.createdFromWizardAt, publishAt);
   const stages = [...flow.stages]
     .sort((a, b) => (stageOrder.get(a.id) ?? 999) - (stageOrder.get(b.id) ?? 999))
-    .map((stage) => ({ ...stage }));
+    .map((stage) => ({
+      ...stage,
+      dueAt: resolveSafeIsoDate(stage.dueAt, publishAt),
+      completedAt: stage.completedAt ? resolveSafeIsoDate(stage.completedAt, stage.dueAt) : undefined,
+    }));
 
   const firstOpenIndex = stages.findIndex((stage) => stage.status !== 'done');
 
@@ -602,6 +622,8 @@ export function normalizeProductionFlow(flow?: ProductionFlow | null): Productio
   const currentStageId = firstOpenIndex === -1 ? stages[stages.length - 1].id : stages[firstOpenIndex].id;
   const provisionalFlow: ProductionFlow = {
     ...flow,
+    publishAt,
+    createdFromWizardAt,
     currentStageId,
     workingDaysBudget: getWorkingDaysBudget(flow),
     workMode: getInitialWorkMode(flow),
@@ -799,18 +821,30 @@ export function updateProductionStageDetails(
 ) {
   const normalized = normalizeProductionFlow(flow);
   if (!normalized) return flow;
+  const currentStage = normalized.stages.find((stage) => stage.id === stageId);
+  if (!currentStage) return normalized;
 
-  return {
+  const hasDueAtUpdate = Object.prototype.hasOwnProperty.call(updates, 'dueAt');
+  const hasNotesUpdate = Object.prototype.hasOwnProperty.call(updates, 'notes');
+  const nextDueAt = hasDueAtUpdate
+    ? resolveSafeIsoDate(updates.dueAt, currentStage.dueAt || normalized.publishAt)
+    : currentStage.dueAt;
+  const nextNotes = hasNotesUpdate
+    ? updates.notes?.trim() || undefined
+    : currentStage.notes;
+
+  return normalizeProductionFlow({
     ...normalized,
     stages: normalized.stages.map((stage) => (
       stage.id === stageId
         ? {
             ...stage,
-            ...updates,
+            ...(hasDueAtUpdate ? { dueAt: nextDueAt } : {}),
+            ...(hasNotesUpdate ? { notes: nextNotes } : {}),
           }
         : stage
     )),
-  };
+  }) || normalized;
 }
 
 export function getProductionFlowSummary(card: Card, board: Board): ProductionFlowSummary | null {
