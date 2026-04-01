@@ -768,7 +768,10 @@ export async function saveBoardSnapshot(board: Board, auditEvents: AuditEvent[] 
   const listIds = listRows.map((row) => row.id);
   const cardIds = cardRows.map((row) => row.id);
 
-  const { error: boardError } = await supabase.from('boards').upsert(boardToDb(normalizedBoard));
+  const { error: boardError } = await supabase
+    .from('boards')
+    .update(boardToDb(normalizedBoard))
+    .eq('id', normalizedBoard.id);
   if (boardError) throw boardError;
 
   await runDeleteIfMissing('lists', normalizedBoard.id, listIds);
