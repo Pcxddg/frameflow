@@ -1,90 +1,99 @@
-# FrameFlow - Documentación Técnica
+# FrameFlow - Documentacion Tecnica
 
 ## Tabla de Contenidos
 
-1. [Descripción General](#descripción-general)
+1. [Descripcion General](#descripcion-general)
 2. [Arquitectura del Sistema](#arquitectura-del-sistema)
-3. [Stack Tecnológico](#stack-tecnológico)
+3. [Stack Tecnologico](#stack-tecnologico)
 4. [Estructura del Proyecto](#estructura-del-proyecto)
-5. [Modelo de Datos](#modelo-de-datos)
+5. [Modelo de Datos (PostgreSQL)](#modelo-de-datos-postgresql)
 6. [Componentes](#componentes)
-7. [Gestión de Estado](#gestión-de-estado)
-8. [Integración con IA (Gemini)](#integración-con-ia-gemini)
-9. [Autenticación y Seguridad](#autenticación-y-seguridad)
-10. [Flujo de Trabajo YouTube (Fórmula 10X)](#flujo-de-trabajo-youtube-fórmula-10x)
-11. [Configuración y Despliegue](#configuración-y-despliegue)
-12. [Variables de Entorno](#variables-de-entorno)
+7. [Gestion de Estado](#gestion-de-estado)
+8. [Integracion con IA (Gemini)](#integracion-con-ia-gemini)
+9. [Autenticacion y Seguridad](#autenticacion-y-seguridad)
+10. [Edge Functions (Backend)](#edge-functions-backend)
+11. [Sistema de Presencia](#sistema-de-presencia)
+12. [Flujo de Trabajo YouTube (Formula 10X)](#flujo-de-trabajo-youtube-formula-10x)
+13. [Configuracion y Despliegue](#configuracion-y-despliegue)
+14. [Variables de Entorno](#variables-de-entorno)
 
 ---
 
-## Descripción General
+## Descripcion General
 
-**FrameFlow** es una aplicación de gestión de proyectos tipo Kanban diseñada específicamente para creadores de contenido en YouTube y sus equipos. Combina la gestión visual de tareas con inteligencia artificial (Google Gemini) para optimizar el pipeline de producción de videos.
+**FrameFlow** es una aplicacion de gestion de proyectos tipo Kanban disenada para creadores de contenido en YouTube y sus equipos. Combina la gestion visual de tareas con inteligencia artificial (Google Gemini) para optimizar el pipeline de produccion de videos.
 
-### Características principales
+### Caracteristicas principales
 
 - **Tablero Kanban colaborativo** en tiempo real con drag & drop
-- **Chatbot IA** (Gemini) que actúa como estratega de crecimiento de YouTube y puede manipular el tablero directamente
-- **Pipeline de producción** basado en la "Fórmula 10X" para videos de YouTube
-- **Grabación y transcripción de audio** integrada con Gemini
-- **Mejora de títulos con IA** para optimizar CTR
-- **Colaboración en equipo** con roles (Creador / Editor / Asistente) y acceso por tablero (RBAC)
-- **Producción Guiada (Production Flow)** integrado para seguimiento de videos paso a paso
-- **Sincronización en tiempo real** de estado y de **presencia de usuarios** vía Firestore y Realtime Database
+- **Chatbot IA** (Gemini) que actua como estratega de crecimiento de YouTube y puede manipular el tablero directamente via function calling
+- **Pipeline de produccion** de 12 fases basado en la "Formula 10X"
+- **Wizard "Idea first + IA asistida"** para crear videos desde brief hasta guion con IA
+- **SEO automatizado**: generacion de keywords, descripciones y hashtags con IA
+- **Grabacion y transcripcion de audio** integrada con Gemini
+- **Mejora de titulos con IA** para optimizar CTR
+- **Colaboracion en equipo** con roles (Creador / Editor / Viewer) y RBAC via RLS
+- **Sistema de presencia** en tiempo real (quien esta online, en que vista)
+- **Invitaciones por email** con soporte para usuarios sin cuenta (pending invitations)
 
 ---
 
 ## Arquitectura del Sistema
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                       Cliente (React SPA)                    │
-│                                                             │
+┌──────────────────────────────────────────────────────────────┐
+│                     Cliente (React SPA)                       │
+│                                                              │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌─────────┐  │
-│  │ Channel  │  │ Board &  │  │VideoWizard   │  │ Chatbot │  │
-│  │ Home     │  │ CardModal│  │(GenAI / IA)  │  │ / Audio │  │
+│  │ Channel  │  │ Board &  │  │ VideoWizard  │  │ Chatbot │  │
+│  │ Home     │  │ CardModal│  │ (GenAI / IA) │  │ / Audio │  │
 │  └────┬─────┘  └────┬─────┘  └──────┬───────┘  └────┬────┘  │
-│       │              │              │               │       │
-│       └──────────────┴──────┬───────┴───────────────┘       │
-│                             │                               │
-│                    ┌────────┴────────┐                      │
-│                    │  BoardContext   │                      │
-│                    │  (store.tsx)    │                      │
-│                    └────────┬────────┘                      │
-│                             │                               │
-└─────────────────────────────┼───────────────────────────────┘
-                              │
-               ┌──────────────┼────────────────┐
-               │              │                │
-      ┌────────┴───┐  ┌───────┴────────┐  ┌────┴──────┐
-      │  Firebase  │  │  Firebase      │  │  Gemini   │
-      │  Auth      │  │  Firestore &   │  │  API      │
-      │  (Google)  │  │  Realtime DB   │  │  (GenAI)  │
-      └────────────┘  └────────────────┘  └───────────┘
+│       │              │               │               │       │
+│       └──────────────┴───────┬───────┴───────────────┘       │
+│                              │                               │
+│                    ┌─────────┴─────────┐                     │
+│                    │  BoardContext     │                     │
+│                    │  (store.tsx)      │                     │
+│                    └─────────┬─────────┘                     │
+│                              │                               │
+└──────────────────────────────┼───────────────────────────────┘
+                               │
+                ┌──────────────┼────────────────┐
+                │              │                │
+       ┌────────┴───┐  ┌──────┴────────┐  ┌────┴──────────┐
+       │  Supabase  │  │  Supabase     │  │  Gemini REST  │
+       │  Auth      │  │  PostgreSQL   │  │  API (via     │
+       │  (Google   │  │  + Realtime   │  │  Edge Fn)     │
+       │  OAuth)    │  │  + RLS        │  │               │
+       └────────────┘  └───────────────┘  └───────────────┘
 ```
 
 ### Flujo de datos
 
-1. El usuario se autentica con Google OAuth via Firebase Auth
-2. El perfil se almacena en Firestore (`/users/{uid}`)
-3. La interfaz `ChannelHome` muestra todos los canales donde el usuario tiene acceso.
-4. Los tableros seleccionados se sincronizan en tiempo real via `onSnapshot` de Firestore. La presencia se sincroniza usando la Realtime Database.
-5. Las acciones del usuario (CRUD de tarjetas, drag & drop) se persisten con actualizaciones optimistas.
-6. El creador utiliza el `NewVideoWizard` o el `Chatbot` para interactuar con Gemini y moldear la estrategia del contenido.
+1. El usuario se autentica con Google OAuth via Supabase Auth (flujo PKCE)
+2. El perfil se crea automaticamente en `profiles` via trigger `handle_new_profile`
+3. La interfaz `ChannelHome` muestra todos los canales (boards) donde el usuario es miembro
+4. Los tableros se sincronizan en tiempo real via `subscribeBoardSnapshot()` (Supabase Realtime)
+5. La presencia se rastrea con heartbeats cada 30s en `presence_sessions`
+6. Las acciones del usuario (CRUD de tarjetas, drag & drop) se persisten con actualizaciones optimistas
+7. Las llamadas a Gemini pasan por la edge function `ai-assist` como proxy seguro
 
 ---
 
-## Stack Tecnológico
+## Stack Tecnologico
 
-| Categoría | Tecnología | Versión |
+| Categoria | Tecnologia | Version |
 |-----------|------------|---------|
 | Framework | React | 19.0.0 |
 | Lenguaje | TypeScript | 5.8.2 |
 | Bundler | Vite | 6.2.0 |
 | Estilos | Tailwind CSS | 4.1.14 |
-| Base de datos | Firebase Firestore | 12.11.0 |
-| Autenticación | Firebase Auth (Google OAuth) | 12.11.0 |
-| IA | Google Gemini (@google/genai) | 1.29.0 |
+| Base de datos | Supabase (PostgreSQL 17) | — |
+| Autenticacion | Supabase Auth (Google OAuth, PKCE) | — |
+| Tiempo real | Supabase Realtime (postgres_changes) | — |
+| Backend | Supabase Edge Functions (Deno) | — |
+| IA | Google Gemini | 2.5-flash / 2.0-flash-lite / 2.5-pro |
+| Hosting | Cloudflare Workers | — |
 | Drag & Drop | @hello-pangea/dnd | 18.0.1 |
 | Animaciones | Motion | 12.23.24 |
 | Iconos | lucide-react | 0.546.0 |
@@ -100,387 +109,331 @@
 frameflow/
 ├── src/
 │   ├── components/
-│   │   ├── AudioRecorder.tsx     # Grabación de audio + transcripción via Gemini
+│   │   ├── card-modal/
+│   │   │   ├── panels/           # Paneles por fase: Idea, Title, Script, Thumbnail, etc.
+│   │   │   ├── hooks/            # useCardAi, useCardActions, usePhaseNavigation, etc.
+│   │   │   ├── CardModal.tsx     # Modal wrapper
+│   │   │   ├── CardModalHeader.tsx
+│   │   │   ├── CardModalPhaseNav.tsx
+│   │   │   ├── constants.ts
+│   │   │   └── types.ts
+│   │   ├── AppHeader.tsx         # Header con selector de canales, avatar, presencia
+│   │   ├── AudioRecorder.tsx     # Grabacion de audio + transcripcion via Gemini
 │   │   ├── Board.tsx             # Contenedor principal del tablero con drag & drop
-│   │   ├── BoardSettings.tsx     # Modal de configuración del canal (nicho, miembros, stats)
+│   │   ├── BoardSettings.tsx     # Modal de configuracion del canal
 │   │   ├── Card.tsx              # Tarjeta visual con badges SEO, progreso, storytelling
-│   │   ├── CardModal.tsx         # Modal completo de edición con heurísticas de Nielsen
-│   │   ├── Chatbot.tsx           # Chatbot IA con function calling de Gemini (6 funciones)
-│   │   ├── Dashboard.tsx         # Panel de métricas, pipeline y analíticas
+│   │   ├── ChannelHome.tsx       # Vista de canales con stats y delete
+│   │   ├── Chatbot.tsx           # Chatbot IA con function calling de Gemini
+│   │   ├── CustomScrollbar.tsx   # Scrollbar personalizado
+│   │   ├── Dashboard.tsx         # Panel de metricas, pipeline y analiticas
 │   │   ├── FilterBar.tsx         # Filtros de tipo de contenido y responsable
-│   │   ├── InterlinkingGraph.tsx # Grafo de conexiones entre videos (telaraña)
+│   │   ├── GuidedCardWorkspace.tsx # Workspace guiado por fases del production flow
+│   │   ├── InterlinkingGraph.tsx # Grafo de conexiones entre videos
 │   │   ├── List.tsx              # Columna del tablero Kanban
-│   │   └── TeamGuide.tsx         # Panel lateral con guía operativa (3 pestañas)
+│   │   ├── NewVideoWizard.tsx    # Wizard de 4 pasos para crear videos con IA
+│   │   ├── TeamGuide.tsx         # Panel lateral con guia operativa
+│   │   └── TeleprompterOverlay.tsx # Overlay de teleprompter para grabacion
+│   ├── hooks/
+│   │   └── useIsMobile.ts        # Deteccion de dispositivo movil
 │   ├── lib/
-│   │   ├── gemini.ts             # Inicialización del cliente Gemini
-│   │   └── utils.ts              # Utilidad cn() para Tailwind CSS
-│   ├── App.tsx                   # Layout principal: header, filtros, routing board/dashboard
-│   ├── firebase.ts               # Configuración de Firebase (Auth + Firestore)
+│   │   ├── supabase/
+│   │   │   ├── client.ts         # Inicializacion del cliente Supabase
+│   │   │   └── frameflow.ts      # Operaciones de datos: auth, CRUD, presencia, invitaciones
+│   │   ├── aiContracts.ts        # Contratos de request/response para IA
+│   │   ├── analytics.ts          # Tracking de eventos
+│   │   ├── audit.ts              # Normalizacion y audit trail
+│   │   ├── cardModalEvents.ts    # Sistema de eventos para el modal
+│   │   ├── gemini.ts             # Orquestacion de IA: retry, fallback, error handling
+│   │   ├── optimizedVideoFlow.ts # Motor de workflow de produccion
+│   │   ├── presence.ts           # Controller de presencia (heartbeat, sessions)
+│   │   ├── thumbnailPrompt.ts    # Prompts para generacion de thumbnails
+│   │   ├── utils.ts              # Utilidad cn() para Tailwind CSS
+│   │   ├── videoFlowAi.ts        # Generacion de briefs y seeds con IA
+│   │   ├── videoSeoAi.ts         # SEO automatizado con IA
+│   │   ├── videoSeoConfig.ts     # Configuracion de SEO por canal
+│   │   ├── workflowPlans.ts      # Templates de workflow de produccion
+│   │   └── youtube.ts            # Integracion con YouTube API
+│   ├── App.tsx                   # Layout principal: header, vistas, presencia, rail panels
 │   ├── main.tsx                  # Entry point de React
-│   ├── store.tsx                 # Estado global con Context API + listeners Firestore
-│   ├── types.ts                  # Interfaces TypeScript (Card con 40+ campos)
+│   ├── store.tsx                 # Estado global con Context API + listeners Supabase
+│   ├── types.ts                  # Interfaces TypeScript completas
+│   ├── useTheme.tsx              # Provider de tema (dark/light/soft)
 │   └── index.css                 # Design tokens, animaciones y estilos base
-├── dist/                         # Build de producción
-├── firebase.json                 # Configuración de Firebase Hosting
-├── firebase-applet-config.json   # Credenciales de Firebase
-├── firebase-blueprint.json       # Schema de Firestore
-├── firestore.rules               # Reglas de seguridad de Firestore
-├── .firebaserc                   # Alias del proyecto Firebase
-├── package.json                  # Dependencias y scripts
-├── tsconfig.json                 # Configuración de TypeScript
-├── vite.config.ts                # Configuración de Vite
-└── .env.example                  # Plantilla de variables de entorno
+├── supabase/
+│   ├── config.toml               # Configuracion local de Supabase
+│   ├── migrations/
+│   │   └── 20260331_000001_frameflow_init.sql  # Schema completo: tablas, views, RLS, funciones
+│   └── functions/
+│       ├── _shared/
+│       │   ├── auth.ts           # requireUser(), createAdminClient()
+│       │   └── cors.ts           # corsHeaders, jsonResponse()
+│       ├── ai-assist/            # Proxy seguro para Gemini REST API
+│       ├── youtube-channel-data/ # Fetch de stats de canal YouTube
+│       ├── accept-invitation/    # Aceptar invitaciones a boards
+│       └── remove-board-member/  # Remover miembros de boards
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── .env.example
+└── index.html
 ```
 
 ---
 
-## Modelo de Datos
+## Modelo de Datos (PostgreSQL)
 
-### Diagrama de entidades
+El schema completo esta en `supabase/migrations/20260331_000001_frameflow_init.sql`.
+
+### Tablas principales
 
 ```
-User
-├── uid: string
-├── email: string
-├── displayName: string
-└── photoURL: string
+profiles                     # Perfiles de usuario (auto-creados via trigger)
+├── id (uuid, PK)            → auth.users(id)
+├── email, email_lowercase
+├── display_name, photo_url
+└── created_at, updated_at
 
-Board
-├── id: string
-├── title: string
-├── ownerId: string              → User.uid
-├── members: string[]            → array de emails
-├── memberRoles?: Record<string, MemberRole> → 'owner', 'editor', 'viewer'
-├── lists: List[]
-├── cards: Record<string, Card>  → mapa de tarjetas por ID
-├── createdAt?: string
-├── updatedAt?: string
-├── videoCount?: number          → contador de videos publicados
-├── nicheName?: string           → nombre del nicho (Océano Azul)
-├── defaultContentType?: string  → 'long' | 'short' | ''
-├── workflowConfig?: WorkflowConfig → Cadencia y roles por defecto
-└── seoConfig?: BoardSeoConfig
+boards                       # Canales / tableros Kanban
+├── id (text, PK)
+├── title, owner_id          → profiles(id)
+├── niche_name, default_content_type
+├── youtube_channel_url
+├── workflow_config (jsonb)   # Cadencia, roles, editor level
+├── seo_config (jsonb)        # Templates SEO, redes sociales
+├── description_presets (jsonb)
+└── created_at, updated_at
 
-List
-├── id: string
-├── title: string
-└── cardIds: string[]            → referencias a Card.id
+board_members                # Membresía con roles
+├── board_id + user_id (PK)
+├── email_lowercase
+├── role                     # 'owner' | 'editor' | 'viewer'
+└── created_at, updated_at
 
-Card
-├── id: string
-├── title: string
-├── description: string          → soporta Markdown
-├── listId: string               → referencia a List.id
-├── labels: Label[]
-├── checklists: Checklist[]
-├── dueDate: string | null       → formato 'yyyy-MM-dd'
-├── assignee: string | null      → 'Tú' | 'Editor'
-│
-│  # Campos Fórmula 10X (base)
-├── titulosLinden: string        → variantes de títulos (Método Linden)
-├── gancho8s: string             → gancho de los primeros 8 segundos
-├── narrativa: string            → estructura narrativa
-├── miniaturaChecklist: {        → checklist de miniatura
-│     rostro: boolean,
-│     texto: boolean,
-│     contexto: boolean
-│   }
-├── ctr2Hours: string            → porcentaje CTR a las 2 horas
-├── interlinking: string         → URL del video para efecto rebufo
-├── linkDrive: string            → enlace a Google Drive con brutos
-│
-│  # Tipo de contenido (Shorts vs Largos)
-├── contentType?: 'long' | 'short'
-│
-│  # SEO Cola Larga
-├── keywords?: string            → palabras clave separadas por coma
-│
-│  # Storytelling estructurado (Regla South Park)
-├── storytelling?: {
-│     queria: string,            → "Quería X..."
-│     pero: string,              → "PERO pasó Y..."
-│     porLoTanto: string         → "POR LO TANTO hice Z"
-│   }
-│
-│  # Protocolo Post-Publicación
-├── postPublication?: {
-│     publishedAt?: string,
-│     commentsResponded?: boolean,
-│     ctrCheckTime?: string,
-│     actionTaken?: 'none' | 'thumbnail' | 'title' | 'both',
-│     actionLog?: string
-│   }
-│
-│  # Monetización y Negocio (expandido)
-├── monetization?: {
-│     hasAffiliate?: boolean,
-│     affiliateLinks?: string,
-│     hasSponsor?: boolean,
-│     sponsorName?: string,
-│     estimatedRPM?: number,
-│     revenue?: number,
-│     sellsProduct?: boolean,
-│     productDescription?: string
-│   }
-│
-│  # Interlinking expandido (Telaraña)
-├── interlinkingTargets?: string[] → IDs de tarjetas enlazadas
-│
-│  # Shorts-específico
-├── shortsHook?: string          → gancho visual 1-3s
-├── shortsLoop?: boolean         → loopabilidad
-├── shortsFunnel?: string        → ID del video largo al que dirige
-│
-│  # Analítica de Proceso
-├── columnHistory?: Array<{      → Historial de fases (para cuellos de botella)
-│     listId: string,
-│     enteredAt: string (timestamp)
-│   }>
-│
-│  # Flujo de Producción Guiado (ProductionFlow)
-├── productionBrief?: ProductionBrief
-└── productionFlow?: ProductionFlow
+lists                        # Columnas del Kanban
+├── id (text, PK)
+├── board_id, title, position
+└── created_at, updated_at
 
-Checklist
-├── id: string
-├── title: string
-└── items: ChecklistItem[]
+cards                        # Tarjetas de video (40+ campos)
+├── id (text, PK)
+├── board_id, list_id, position, title, description
+├── due_date, assignee, content_type ('long'|'short')
+├── titulos_linden, gancho_8s, narrativa, guion
+├── keywords, seo_source_text
+├── miniatura_checklist (jsonb), thumbnail_plan (jsonb)
+├── ctr_2_hours, interlinking, link_drive, drive_links (jsonb)
+├── storytelling (jsonb)      # queria/pero/porLoTanto
+├── post_publication (jsonb)
+├── monetization (jsonb)      # affiliate, sponsor, revenue
+├── interlinking_targets (jsonb)
+├── shorts_hook, shorts_loop, shorts_funnel
+├── column_history (jsonb)    # Historial de fases
+├── production_brief (jsonb)  # Brief del video (idea, audience, etc.)
+└── created_at, updated_at
 
-ChecklistItem
-├── id: string
-├── text: string
-└── isCompleted: boolean
+labels                       # Etiquetas por board
+├── board_id + id (PK)
+├── name, color
+└── created_at, updated_at
 
-Label
-├── id: string
-├── name: string
-└── color: LabelColor            → 'red' | 'yellow' | 'blue' | 'green' | 'purple' | 'orange'
+card_labels                  # Relacion card ↔ label
+├── card_id + label_id (PK)
+└── board_id
 
-ProductionFlow
-├── templateId: string
-├── publishAt: string
-├── currentStageId: string
-├── workMode: string
-├── scheduleStatus: string
-└── stages: ProductionStage[]    → Historial e hitos de producción (idea, research, guion, grabacion, etc.)
+checklists                   # Checklists por tarjeta
+├── id (text, PK)
+├── card_id, title, position
+└── created_at, updated_at
 
-BoardPresenceMember
-├── emailLowercase: string
-├── displayName: string
-├── state: string                → 'online' | 'offline'
-├── isOnline: boolean
-├── isActiveInThisBoard: boolean
-├── activeSurface: string        → 'board' | 'dashboard' | 'guide' | 'channel_home'
-├── lastSeenAt: string
-└── sessionCount: number
+checklist_items              # Items individuales
+├── id (text, PK)
+├── checklist_id, text, is_completed, position
+└── created_at, updated_at
 
-BoardPresenceEvent
-├── id: string
-├── type: string                 → 'entered_board' | 'left_board' | 'came_online' | 'went_offline'
-├── emailLowercase: string
-└── at: string
+production_flows             # Workflow guiado por tarjeta
+├── card_id (text, PK)       → cards(id)
+├── template_id, publish_at, current_stage_id
+├── schedule_mode, work_mode, schedule_status
+├── is_tight_schedule, working_days_budget
+├── kickoff_at, raw (jsonb)
+└── created_at, updated_at
 
-WorkflowConfig
-├── cadence: number              → Ej: 1, 2, 3 videos largos/semana
-├── shortsPerWeek: number        → Ej: 0, 2, 3, 5
-├── roles: AuditRole[]
-└── editorLevel: string          → 'full' | 'basic'
+production_stages            # Etapas individuales del workflow
+├── card_id + stage_id (PK)  → production_flows(card_id)
+├── label, macro_column_id, owner_role, fallback_owner_role
+├── deliverable, status, due_at, completed_at
+├── notes, checklist_title, has_ai_draft, position
+└── created_at, updated_at
+
+invitations                  # Invitaciones a boards
+├── id (uuid, PK)
+├── board_id, board_title_snapshot
+├── invitee_email_lowercase, inviter_user_id
+├── role ('editor'|'viewer'), status ('pending'|'accepted'|'declined'|'revoked')
+└── created_at, updated_at, responded_at
+
+audit_events                 # Log de eventos de auditoria
+├── id (text, PK)
+├── board_id, card_id, actor_email, type
+├── at, from_list_id, to_list_id, payload (jsonb)
+└── created_at
+
+presence_sessions            # Sesiones de presencia activa
+├── id (uuid, PK)
+├── board_id, user_id, email_lowercase
+├── display_name, photo_url, active_surface
+├── is_online, last_heartbeat_at, entered_at, left_at
+└── created_at, updated_at
+
+presence_events              # Log de eventos de presencia
+├── id (uuid, PK)
+├── board_id, user_id, email_lowercase
+├── display_name, photo_url, type, surface, at
+└── created_at
 ```
+
+### Views
+
+| Vista | Proposito |
+|-------|-----------|
+| `board_online_members` | Miembros activos con heartbeat < 75s, deduplicados por `(board_id, user_id)` |
+| `board_health` | Metricas por board: total cards, guided cards, risky cards, online count |
+| `board_flow_summary` | Resumen del production flow por stage y status |
+
+### Funciones SQL
+
+| Funcion | Tipo | Proposito |
+|---------|------|-----------|
+| `current_user_email()` | SQL | Extrae email del JWT del usuario actual |
+| `is_board_member(board_id)` | SQL, security definer | Verifica si el usuario es miembro del board |
+| `board_role(board_id)` | SQL, security definer | Retorna el rol del usuario en el board |
+| `can_edit_board(board_id)` | SQL | Retorna true si el rol es 'owner' o 'editor' |
+| `lookup_profile_by_email(email)` | SQL, security definer | Busca perfil por email (bypasea RLS) |
+| `handle_new_profile()` | Trigger | Auto-crea perfil al registrarse un usuario |
+| `seed_board_defaults()` | Trigger | Inicializa etiquetas por defecto al crear board |
+| `touch_updated_at()` | Trigger | Auto-actualiza `updated_at` en modificaciones |
 
 ### Etiquetas predefinidas
 
 | Color | Nombre | Uso |
 |-------|--------|-----|
 | Rojo | Urgente | Tareas prioritarias |
-| Amarillo | Esperando feedback | Pendiente de revisión |
+| Amarillo | Esperando feedback | Pendiente de revision |
 | Azul | En manos del editor | Delegado al editor |
-| Verde | Listo para publicar | Aprobado para publicación |
+| Verde | Listo para publicar | Aprobado para publicacion |
 | Morado | Short | Contenido tipo Short |
-| Naranja | Monetizado | Tarjeta con monetización activa |
-
-### Plantillas de Checklists
-
-**Fórmula 10X (Video Largo):**
-1. Nicho / Ángulo único definido
-2. Investigación SEO + 50 Títulos listos
-3. Gancho perfecto de 8s (Start with end / Dolor)
-4. Storytelling estructural ("Quería X, PERO pasó Y...")
-5. Grabación completada
-6. Edición: Cambio visual cada 10s
-7. Miniatura diseñada (Rostro, Texto, Contexto)
-8. SEO, Etiquetas y Links de afiliados en descripción
-9. Comentario fijado para Interlinking (Telaraña)
-10. Video Programado y Publicado
-11. Monitorización CTR 2H (Ataque al corazón)
-
-**Sistema de Shorts:**
-1. Visualmente atractivo (1-3s Gancho)
-2. Formato repetible diseñado
-3. Loopabilidad infinita asegurada
-4. Llamado a la acción rápido
-5. Publicado (Top of Funnel)
+| Naranja | Monetizado | Tarjeta con monetizacion activa |
 
 ---
 
 ## Componentes
 
 ### `App.tsx`
-Componente raíz. Envuelve la aplicación en `BoardProvider` para proveer el estado global. Contiene:
-- Pantalla de carga (spinner) mientras se inicializa la autenticación
+Componente raiz. Envuelve la aplicacion en `BoardProvider` para proveer el estado global. Contiene:
+- Pantalla de carga mientras se inicializa la autenticacion
 - Pantalla de login con Google si no hay usuario autenticado
-- **Header** con selector de canales, avatar y notificaciones
-- **Área principal**: Renderiza `ChannelHome` (vista de canales), `Board` (con filtros) o `Dashboard` según la selección del usuario.
-- **Chatbot** flotante siempre visible
+- **AppHeader** con selector de canales, avatar, presencia online y menu de usuario
+- **Area principal**: Renderiza `ChannelHome` (vista de canales), `Board` (con filtros) o `Dashboard`
+- **Rail lateral** (desktop): panels de settings, chatbot, share, guide
+- **Sheets** (mobile): menu, share, chatbot, boards
+- **Presence controller**: heartbeats cada 30s, tracking de vista activa
+
+### `AppHeader.tsx`
+Header responsive con dos variantes (desktop/mobile):
+- Selector de canal con dropdown
+- Indicador de presencia online (avatares + counter)
+- Menu de usuario con opciones contextuales
+- Badge de estado de guardado (saving/saved/error)
 
 ### `ChannelHome.tsx`
-Pantalla de inicio ("Tus Canales") que lista los canales (tableros) a los que tiene acceso el usuario:
-- Creación de nuevos canales.
-- Resumen estadístico por canal (videos totales, en progreso, publicados, ritmo/cadencia y configuración de equipo).
-- Permite la navegación rápida entre la vista Board y Dashboard para un canal específico.
+Pantalla de inicio ("Tus Canales"):
+- Creacion de nuevos canales
+- Resumen estadistico por canal
+- Eliminacion de canales (solo owner, con confirmacion)
+- Navegacion rapida entre Board y Dashboard
 
 ### `Board.tsx`
-Contenedor principal del tablero Kanban. Implementa:
+Contenedor principal del tablero Kanban:
 - Contexto de `@hello-pangea/dnd` para drag & drop
-- Recibe `contentFilter` y `assigneeFilter` como props para filtrar tarjetas visibles
-- Renderiza las columnas (`List`) con sus tarjetas filtradas
-- Maneja el evento `onDragEnd` para reordenar/mover tarjetas entre columnas
-
-### `List.tsx`
-Representa una columna del tablero Kanban. Cada lista tiene:
-- Título de la columna (ej. "Ideas (Océano Azul)")
-- Zona droppable para recibir tarjetas
-- Input para añadir nuevas tarjetas
-- Renderiza los componentes `Card` de sus `cardIds`
+- Filtros de tipo de contenido y responsable
+- Renderiza columnas (`List`) con tarjetas filtradas
+- Maneja `onDragEnd` para reordenar/mover tarjetas
 
 ### `Card.tsx`
-Componente visual de una tarjeta individual en el tablero. Muestra:
-- Etiquetas de color
-- Título de la tarjeta
-- **Badge SEO** (icono Search) cuando la tarjeta tiene keywords
-- **Anillo de progreso** SVG mostrando % de checklist completado
-- **Dots de storytelling** (3 puntos morados) cuando la narrativa está completa
-- **Borde rojo pulsante** cuando la tarjeta está en la última columna y tiene CTR < 4%
-- Indicadores de fecha límite, asignado y tipo de contenido
-- Es draggable via `@hello-pangea/dnd`
-- Al hacer clic abre el `CardModal`
+Tarjeta visual individual en el tablero:
+- Etiquetas de color, titulo
+- Badge SEO (cuando hay keywords)
+- Anillo de progreso SVG (% checklist completado)
+- Dots de storytelling (narrativa completa)
+- Borde rojo pulsante (CTR < 4% en ultima columna)
+- Indicadores de fecha, asignado, tipo de contenido
+- Draggable via `@hello-pangea/dnd`
+
+### `card-modal/` (subdirectorio)
+Modal completo de edicion de tarjetas, organizado en sub-componentes:
+
+**Panels** (uno por fase del pipeline):
+- `IdeaPanel.tsx` — Brainstorming, brief, research
+- `TitlePanel.tsx` — Titulos, hook, CTR
+- `ScriptPanel.tsx` — Guion, storytelling
+- `ThumbnailPanel.tsx` — Thumbnail plan, generacion IA
+- `EditingPanel.tsx` — Post-produccion
+- `PublishPanel.tsx` — SEO, descripcion, scheduling
+- `PostPubPanel.tsx` — Analisis post-publicacion
+
+**Hooks**:
+- `useCardAi.ts` — Generacion de contenido IA (titulos, thumbnails, scripts)
+- `useCardActions.ts` — Acciones de manipulacion de tarjeta
+- `useCardDerived.ts` — Propiedades computadas
+- `usePhaseNavigation.ts` — Navegacion entre fases
+- `useImageUpload.ts` — Upload de imagenes
+- `useFlowStyles.ts` — Estilos por fase
 
 ### `NewVideoWizard.tsx`
-Wizard guiado de 4 pasos ("Idea first + IA asistida") para la creación de nuevos videos con integración a Gemini:
-- **Paso 1 (Idea base)**: El usuario define la tesis general del video.
-- **Paso 2 (Preguntas clave)**: Define brief operativo (Audiencia, tono, promesa, etc.) con botón para obtener sugerencias prellenadas usando la IA.
-- **Paso 3 (Generar con IA)**: Siembra borradores mediante Gemini para distintos apartados de la tarjeta: Título recomendado, alternativas de títulos, hook, resumen de investigación, guion base y preguntas abiertas.
-- **Paso 4 (Revisión Final)**: Permite revisar, editar y validar el material base sugerido antes de materializar la tarjeta en el tablero real.
-
-### `CardModal.tsx`
-Modal completo para ver y editar todos los detalles de una tarjeta. Diseñado con las **10 heurísticas de Nielsen**:
-
-**Sistema de fases**: Detecta automáticamente la fase de la tarjeta según su `listId` y muestra un badge de fase en el header con un banner de "siguiente paso" contextual. 
-
-**Integración con Flujo Guíado**: Si la tarjeta es parte de un `ProductionFlow` estructurado, el interior del modal se renderiza íntegramente mediante el componente `GuidedCardWorkspace`, proporcionando una interfaz paso a paso (Idea, Research, Scripting, etc.).
-
-**Disclosure progresivo** (Para la vista estándar): Las secciones se auto-expanden según la fase actual de la tarjeta.
-
-| Sección | Funcionalidad |
-|---------|---------------|
-| Header | Badge de fase + título inline editable + botón "Mejorar con IA" con confirmación Accept/Reject |
-| Banner | "Siguiente paso" contextual según la fase actual |
-| SEO | Keywords de cola larga |
-| Descripción | Editor Markdown con plantilla precargable + grabación de audio |
-| Shorts | Hook visual, loopabilidad, funnel a video largo (solo si contentType = 'short') |
-| Ingeniería del Clic | Método Linden (títulos), Checklist miniatura (Rostro/Texto/Contexto) |
-| Retención | Gancho 8s, Storytelling estructurado (Quería/Pero/Por lo tanto) |
-| Interlinking | Chips clickeables de tarjetas enlazadas + URL de efecto rebufo |
-| Monetización | Afiliados, patrocinador, RPM, revenue, producto |
-| Post-publicación | Fecha de publicación, respuesta a comentarios, acción CTR tomada |
-| Checklists | Progreso visual con barra, items completables |
-| Sidebar | Responsable, Fecha límite (calendario), Link Drive, Plantillas, Etiquetas, CTR con alerta visual |
-| Zona peligro | Eliminación con confirmación |
-
-**Atajos**: Escape para cerrar, clic en overlay para cerrar, validación CTR (0-100).
+Wizard de 4 pasos ("Idea first + IA asistida"):
+1. **Idea base**: Tesis general del video
+2. **Preguntas clave**: Brief operativo (audiencia, tono, promesa) con sugerencias IA
+3. **Generar con IA**: Seeds via Gemini (titulo + 10 alternativas, hook, research, guion)
+4. **Revision Final**: Editar y validar antes de crear la tarjeta
 
 ### `GuidedCardWorkspace.tsx`
-Componente que toma control del espacio de trabajo interior del `CardModal` cuando el usuario ha inicializado el video utilizando el `NewVideoWizard` (Flujo de Producción Optimizada).
-- Divide la información de manera más limpia y focalizada según la fase del proyecto (`ProductionStageId`).
-- Minimiza la cantidad de metadatos visibles a la vez.
-- Mantiene a la vista la "Tesis" o "Brief" del proyecto (Idea, Audiencia, Promesa) para no perder el contexto durante la redacción.
-- Acciones integradas directas con el Global Store para marcar `stages` como "in_progress" o "done".
+Workspace que reemplaza el interior del CardModal cuando el video fue creado desde el Wizard:
+- Vista paso a paso segun `ProductionStageId`
+- Brief siempre visible como contexto
+- Acciones integradas para marcar stages como `in_progress` o `done`
 
 ### `Chatbot.tsx`
-Chatbot flotante con integración de Gemini. Funcionalidades:
-- Ventana de chat expandible desde botón flotante
-- Historial de mensajes con renderizado Markdown
-- Chips de sugerencias para acciones comunes
-- Envía el contexto completo del tablero a Gemini en cada mensaje
-- **Function calling** (6 funciones): Gemini puede ejecutar acciones en el tablero:
-  - `addCard(listId, title)` — Crear tarjetas en cualquier columna
-  - `moveCard(cardId, destListId)` — Mover tarjetas entre fases
-  - `updateCard(cardId, title?, description?)` — Actualizar tarjetas
-  - `suggestKeywords(cardId, keywords)` — Inyectar SEO estratégico
-  - `updateMonetization(cardId, updates)` — Gestionar monetización
-  - `setContentType(cardId, type)` — Definir Short o Video Largo
+Chatbot con Gemini y function calling (6 funciones):
+- `addCard`, `moveCard`, `updateCard`, `suggestKeywords`, `updateMonetization`, `setContentType`
 - Personalidad: "Estratega de Crecimiento de YouTube nivel experto"
-
-### `AudioRecorder.tsx`
-Componente para grabar audio desde el micrófono y transcribirlo:
-- Acceso al micrófono via `navigator.mediaDevices.getUserMedia`
-- Graba audio en formato WebM
-- Envía el audio a Gemini para transcripción
-- El texto transcrito se inserta en la descripción de la tarjeta
-
-### `FilterBar.tsx`
-Barra de filtros horizontal entre el header y el tablero:
-- **Filtro de tipo**: Todos / Largo (Film icon) / Short (Zap icon)
-- **Filtro de responsable**: Todos / Tú / Editor
-- Los filtros se pasan como props al `Board` para filtrar tarjetas visibles
-
-### `TeamGuide.tsx`
-Panel lateral deslizable con guía operativa completa. Estructura de 3 pestañas:
-- **Workflow**: Cadencia (1 largo/semana + 2-3 shorts), Semana Tipo (Lunes-Sábado), tiempos reales (15-30h/semana), estructura de carpetas Drive
-- **Roles**: Responsabilidades Creador vs Editor, protocolo de handoff (4 pasos con triggers), reglas de comunicación (FrameFlow vs WhatsApp), SLAs (brutos 24h, primer corte 48h, review 12h, cambios 24h)
-- **Estrategia**: Fórmula 10X, SEO cola larga, estrategia de Shorts, monetización, protocolo de emergencia CTR
+- Contexto completo del tablero enviado en cada mensaje
+- Historial con renderizado Markdown
 
 ### `Dashboard.tsx`
-Panel de visualización de métricas y analíticas:
-- **Regla 1 de 10**: Recordatorio visual de la regla de experimentación
-- **Métricas generales**: Total de tarjetas, completadas, CTR promedio, monetizadas
-- **Pipeline**: Visualización de tarjetas por fase con barras de progreso
-- **Mix de contenido**: Distribución Largos vs Shorts con gráfica visual
-- **CTR Watch**: Tarjetas con peor CTR para intervención rápida
-- **Monetización**: Resumen de revenue e ingresos potenciales
-- **Checklist health**: Progreso general de checklists con anillo SVG
-- **Grafo de Interlinking**: Visualización de conexiones entre videos (vía InterlinkingGraph)
+Panel de metricas:
+- Pipeline visual por fase con barras de progreso
+- Mix de contenido (Largos vs Shorts)
+- CTR Watch (tarjetas con peor CTR)
+- Resumen de monetizacion
+- Checklist health
+- Grafo de interlinking
 
-### `InterlinkingGraph.tsx`
-Visualización de la "telaraña" de videos:
-- Construye links a partir de `interlinkingTargets` y `shortsFunnel` de cada tarjeta
-- Clasifica conexiones: Short→Largo, Viral→Ventas, Viral→Evergreen, Short→Short, Otro
-- Renderiza cards agrupados por tipo de enlace con bordes coloreados
-- Incluye componentes `CardChip` clickeables para navegar entre tarjetas
+### Otros componentes
 
-### `BoardSettings.tsx`
-Modal de configuración del canal:
-- Nombre del canal (editable)
-- Nicho / Océano Azul (editable)
-- Tipo de contenido por defecto (toggle Largo/Short)
-- Lista de miembros del equipo con asignación de roles y botón para revocar acceso
-- Estadísticas: total de videos, tarjetas activas, miembros
-
-### `CustomScrollbar.tsx`
-Componente de utilidad envolvente que proporciona barras de desplazamiento diseñadas a medida para contenedores con desbordamiento (overflow), integradas fluidamente con Tailwind.
+| Componente | Proposito |
+|------------|-----------|
+| `AudioRecorder.tsx` | Grabacion de audio + transcripcion via Gemini |
+| `BoardSettings.tsx` | Configuracion del canal, miembros, roles |
+| `FilterBar.tsx` | Filtros de tipo (Largo/Short) y responsable |
+| `InterlinkingGraph.tsx` | Visualizacion de conexiones entre videos |
+| `List.tsx` | Columna individual del Kanban |
+| `TeamGuide.tsx` | Guia operativa (Workflow, Roles, Estrategia) |
+| `TeleprompterOverlay.tsx` | Overlay de teleprompter para grabacion |
+| `CustomScrollbar.tsx` | Scrollbar personalizado |
 
 ---
 
-## Hooks y Utilidades
-
-### `useTheme.tsx`
-Gestiona el sistema de temas (dark, light, soft) persistiendo la selección del usuario en el navegador y aplicando las clases necesarias al `html`/`body` para que Tailwind se encargue de inyectar las variables o esquemas definidos.
-
-### `useIsMobile.ts`
-Hook utilitario que escucha los eventos visuales del tamaño de la ventana (Window Resize) para determinar fácilmente si el cliente actualmente está en un dispositivo de resolución móvil o menor (`max-width: 768px`). Útil para colapsar paneles o modales dinámicamente.
-
----
-
-## Gestión de Estado
+## Gestion de Estado
 
 El estado se gestiona con React Context API en `src/store.tsx`.
 
@@ -489,20 +442,20 @@ El estado se gestiona con React Context API en `src/store.tsx`.
 ```typescript
 interface BoardContextType {
   // Estado
-  user: AppUser | null;          // Usuario autenticado
-  boards: Board[];                // Todos los tableros del usuario
-  board: Board | null;            // Tablero actualmente seleccionado
-  currentBoardId: string | null;  // ID del tablero actual
-  isAuthReady: boolean;           // Si la autenticación ha sido verificada
-  saveState: 'idle' | 'saving' | 'saved' | 'error'; // UX optimista de guardado
+  user: AppUser | null;
+  boards: Board[];
+  board: Board | null;
+  currentBoardId: string | null;
+  isAuthReady: boolean;
+  saveState: 'idle' | 'saving' | 'saved' | 'error';
 
-  // Roles y Permisos (RBAC)
-  currentUserRole: MemberRole | null;
+  // Roles y Permisos (RBAC via RLS)
+  currentUserRole: MemberRole | null;  // 'owner' | 'editor' | 'viewer'
   isBoardOwner: boolean;
   canEditBoard: boolean;
   canInviteMembers: boolean;
 
-  // Presencia Colaborativa (Realtime)
+  // Presencia Colaborativa
   boardPresenceMembers: BoardPresenceMember[];
   boardPresenceEvents: BoardPresenceEvent[];
   onlineMemberCount: number;
@@ -516,19 +469,14 @@ interface BoardContextType {
 
   // Acciones - Tarjetas
   addCard: (listId: string, title: string) => void;
-  createVideoFromFlow: (input: CreateVideoFromFlowInput) => void; // Desde wizard
+  createVideoFromFlow: (input: CreateVideoFromFlowInput) => void;
   updateCard: (cardId: string, updates: Partial<Card>) => void;
   deleteCard: (cardId: string, listId: string) => void;
-  moveCard: (sourceListId: string, destListId: string, sourceIndex: number, destIndex: number, cardId: string) => void;
+  moveCard: (...) => void;
 
-  // Acciones - Flujo Guiado (Production Flow)
-  setProductionStageStatus: (cardId: string, stageId: ProductionStageId, status: ProductionStageStatus) => void;
-  updateProductionStage: (cardId: string, stageId: ProductionStageId, updates: Partial<{dueAt: string; notes: string}>) => void;
-
-  // Acciones - Checklists y Labels
-  addChecklist: (cardId: string, templateName: keyof typeof CHECKLIST_TEMPLATES) => void;
-  toggleChecklistItem: (cardId: string, checklistId: string, itemId: string) => void;
-  toggleLabel: (cardId: string, label: Label) => void;
+  // Acciones - Production Flow
+  setProductionStageStatus: (cardId, stageId, status) => void;
+  updateProductionStage: (cardId, stageId, updates) => void;
 
   // Auth
   signIn: () => void;
@@ -536,257 +484,345 @@ interface BoardContextType {
 }
 ```
 
-### Listeners en tiempo real (Effects)
+### Listeners en tiempo real
 
-1. **Auth Listener** (`onAuthStateChanged`): Detecta cambios en la sesión. Al autenticar, guarda el perfil en Firestore.
-2. **Boards Listener** (`onSnapshot` con query): Escucha todos los tableros donde el email del usuario está en `members[]`. Auto-selecciona el primero si no hay ninguno seleccionado. Migra datos de `localStorage` si existen.
-3. **Current Board Listener** (`onSnapshot` por documento): Escucha cambios en tiempo real del tablero actualmente seleccionado.
-4. **Presence Listener**: Se suscribe a `presence_members` y `presence_events` (subcolecciones del tablero instanciadas a su vez desde la RTDB gracias a Firebase Functions) para conocer a tiempo real otros miembros conectados.
+| Listener | Funcion | Fuente |
+|----------|---------|--------|
+| Auth | `subscribeToAuthState()` | Supabase Auth `onAuthStateChange` |
+| Boards list | `subscribeBoardsForUser()` | Supabase Realtime (tabla `board_members`) |
+| Board snapshot | `subscribeBoardSnapshot()` | Supabase Realtime (multiples tablas) |
+| Presence | `subscribePresence()` | Supabase Realtime (tablas `presence_sessions` + `presence_events`) |
+| Audit events | `subscribeAuditEvents()` | Supabase Realtime (tabla `audit_events`) |
 
-### Patrón de actualización
+### Patron de actualizacion
 
-Todas las operaciones de escritura usan **actualizaciones optimistas**: primero se actualiza el estado local (`setBoard`), la UI marca el `saveState` como envolvente `saving`, se persiste en Firestore (`updateDoc`), y finalmente el `saveState` cambia fluidamente a `saved`. Esto proporciona una UX fluida sin esperar la confirmación explícita restrictiva del servidor.
+Todas las operaciones usan **actualizaciones optimistas**:
+1. Se actualiza el estado local (`setBoard`)
+2. `saveState` cambia a `'saving'`
+3. Se persiste en PostgreSQL via `saveBoardSnapshot()` (upserts por tabla)
+4. `saveState` cambia a `'saved'`
+5. Si falla, se revierte al estado anterior y `saveState` = `'error'`
+
+La funcion `saveBoardSnapshot()` normaliza el board completo y escribe:
+- Board metadata → `boards` table
+- Lists → `lists` table (con dedup)
+- Cards → `cards` table (con dedup)
+- Labels, checklists, checklist items → tablas respectivas
+- Production flows y stages → tablas respectivas (con dedup de keys compuestas)
 
 ---
 
-## Integración con IA (Gemini)
-
-### Inicialización
-
-```typescript
-// src/lib/gemini.ts
-import { GoogleGenAI } from '@google/genai';
-export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-```
+## Integracion con IA (Gemini)
 
 ### Modelos utilizados
 
-| Contexto | Modelo | Uso |
-|----------|--------|-----|
-| Chatbot | `gemini-3.1-pro-preview` | Conversación completa con function calling |
-| Mejorar título | `gemini-3.1-flash-lite-preview` | Sugerencia de títulos optimizados |
-| Confirmar título | `gemini-3.1-flash-lite-preview` | Validación del título aceptado |
-| Transcripción | `gemini-3-flash-preview` | Audio a texto (AudioRecorder) |
+| Modelo | Alias | Uso |
+|--------|-------|-----|
+| `gemini-2.5-flash` | Primary | Chatbot, titulos, briefs, SEO, scripts |
+| `gemini-2.0-flash-lite` | Lite | Fallback rapido |
+| `gemini-2.5-pro` | Pro | Tareas complejas (con fallback a flash) |
 
-### Function Calling (Chatbot)
+### Modos de invocacion
 
-El chatbot define 6 funciones que Gemini puede invocar para manipular el tablero directamente:
+**1. Via Edge Function (produccion)**:
+```
+Cliente → supabase.functions.invoke('ai-assist') → Edge Fn → Gemini REST API
+```
+La edge function `ai-assist` actua como proxy seguro: valida el JWT del usuario, normaliza el request body y llama a `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`.
 
-| Función | Parámetros | Propósito |
-|---------|------------|-----------|
-| `addCard` | `listId, title` | Crear una nueva tarjeta en cualquier columna |
-| `moveCard` | `cardId, destListId` | Mover tarjeta entre fases del pipeline |
-| `updateCard` | `cardId, title?, description?`| Actualizar título y/o descripción |
-| `suggestKeywords`| `cardId, keywords` | Inyectar SEO estratégico (string separado por comas) |
-| `updateMonetization`| `cardId, hasAffiliate?, affiliateLinks?, hasSponsor?, sponsorName?, estimatedRPM?, sellsProduct?` | Gestionar monetización completa |
-| `setContentType`| `cardId, contentType` | Definir estrategia ('long' o 'short') |
+**2. Directo (desarrollo)**:
+Cuando `VITE_GEMINI_API_KEY` esta configurada y `VITE_ENABLE_DIRECT_GEMINI=true`, el cliente llama directamente a la API de Gemini usando el SDK `@google/genai`.
 
-**Flujo:**
-1. Se construye el contexto del tablero (columnas + tarjetas con IDs)
-2. Se envía el historial de chat + mensaje del usuario + contexto a Gemini
-3. Si Gemini responde con un `functionCall`, se ejecuta la acción en el tablero
-4. Se envía el resultado de la función de vuelta a Gemini como `functionResponse`
-5. Gemini genera una respuesta final en lenguaje natural
+### Retry y fallback
 
-### System Instruction del Chatbot
+```
+gemini-2.5-pro → gemini-2.5-flash → gemini-2.0-flash → gemini-2.0-flash-lite
+```
 
-El chatbot está configurado como un "Estratega de Crecimiento de YouTube nivel experto" que:
-- Se enfoca en Retención, CTR y Psicología del Clic
-- Exige la estructura narrativa "Quería X, PERO pasó Y, POR LO TANTO hice Z" (Regla de South Park)
-- Genera ganchos de 8 segundos
-- Aplica el "Método Linden" para variantes de títulos
-- Puede manipular directamente el tablero Kanban
+- 3 reintentos con backoff exponencial (1.5s, 6s, 13.5s)
+- Si un modelo falla por rate limit/unavailable, intenta el siguiente
+- Errores transitorios (429, 500, 503) se reintentan
+- Errores permanentes (401, 403) se lanzan inmediatamente
+
+### Funcionalidades de IA
+
+| Funcion | Archivo | Proposito |
+|---------|---------|-----------|
+| `generateVideoSeedDraft()` | `videoFlowAi.ts` | Genera titulo + 10 alternativas, hook, research, guion |
+| `generateBriefSuggestions()` | `videoFlowAi.ts` | Sugiere brief operativo (audiencia, tono, promesa) |
+| `generateVideoSeoDraft()` | `videoSeoAi.ts` | Keywords, descripcion, hashtags |
+| Title improvement | `useCardAi.ts` | Mejora de titulo individual |
+| Script analysis | `useCardAi.ts` | Analisis de guion (retencion, hook, storytelling) |
+| Thumbnail prompts | `useCardAi.ts` | Genera variantes de prompt para thumbnail |
+| Audio transcription | `AudioRecorder.tsx` | Transcripcion de audio grabado |
+| Chatbot | `Chatbot.tsx` | Conversacion + function calling sobre el tablero |
 
 ---
 
-## Autenticación y Seguridad
+## Autenticacion y Seguridad
 
-### Autenticación
+### Autenticacion
 
-- **Proveedor**: Google OAuth via `signInWithPopup` de Firebase Auth
-- **Flujo**: Login → Firebase Auth → Guardar perfil en `/users/{uid}` → Cargar tableros
-- **Cierre de sesión**: Limpia el estado local (user, boards, currentBoard) y cierra la sesión de Firebase
+- **Proveedor**: Google OAuth via Supabase Auth
+- **Flujo**: PKCE (Proof Key for Code Exchange)
+- **Redirect**: `window.location.origin + /auth/callback`
+- **Flujo completo**:
+  1. `signInWithGoogle()` → `supabase.auth.signInWithOAuth({ provider: 'google' })`
+  2. Redirect a Google → usuario autoriza → redirect de vuelta con code
+  3. Supabase intercambia code por JWT
+  4. `onAuthStateChange` detecta el login
+  5. `ensureProfile()` crea/actualiza el perfil en `profiles`
+  6. `acceptPendingInvitations()` acepta invitaciones pendientes para ese email
+  7. Se cargan los boards del usuario
 
-### Reglas de Firestore (`firestore.rules`)
+### Row Level Security (RLS)
 
-```
-/users/{userId}
-  - read:   cualquier usuario autenticado
-  - create: solo el propio usuario (uid coincide)
-  - update: solo el propio usuario (uid coincide, no puede cambiar uid)
+Todas las tablas tienen RLS habilitado. Las policies usan las funciones helper:
 
-/boards/{boardId}
-  - read:   owner, miembros por email, o admin
-  - create: cualquier autenticado (con datos válidos, ownerId = auth.uid)
-  - update: owner, miembros o admin (no puede cambiar ownerId)
-  - delete: solo owner o admin
-```
+- `is_board_member(board_id)` — verifica membresia (security definer)
+- `can_edit_board(board_id)` — verifica que sea owner o editor
+- `board_role(board_id)` — retorna el rol (security definer)
 
-### Validaciones
+**Patron comun de policies:**
+- `SELECT`: requiere `is_board_member(board_id)`
+- `INSERT/UPDATE/DELETE`: requiere `can_edit_board(board_id)`
+- `profiles`: solo el propio usuario puede leer/escribir su perfil
 
-- **Usuario**: requiere `uid` y `email` válidos
-- **Tablero**: requiere `id`, `title` (1-100 chars), `ownerId`, `members` (<50), `lists`, `cards`
-- **Admin**: `keanukeanom@gmail.com` con email verificado
+### Invitaciones
 
----
-
-## Funciones Backend (Firebase Functions)
-
-El backend expone operaciones gen 2 documentadas en `functions/index.js`, manejando validación de auth de los usuarios:
-
-| Función | Tipo | Propósito |
-|---------|------|-----------|
-| `getYouTubeChannelData` | `onCall` | Obtiene KPIs y videos recientes de un canal usando la API de YouTube. Protegido por autenticación y utiliza el secreto `YOUTUBE_API_KEY`. |
-| `inviteBoardMember` | `onCall` | Agrega un nuevo miembro a un canal, asegurando control de acceso para que sólo los dueños o miembros administradores interactúen con la lista. |
-| `removeBoardMember` | `onCall` | Revoca acceso a un miembro de un tablero específico. |
-| `syncPresenceToBoards` | `onValueWritten` | Función de Realtime Database. Traduce la actividad cruda y el estado de conexión hacia agregados manejables y persistentes en Firestore (`presence_members` y `presence_events`). |
+El sistema soporta invitar usuarios que aun no tienen cuenta:
+1. Owner invita por email → se busca perfil via `lookup_profile_by_email()` (security definer)
+2. Si existe: se agrega directamente a `board_members`
+3. Si no existe: se crea registro en `invitations` con status `'pending'`
+4. Cuando el invitado se registra, `acceptPendingInvitations()` encuentra y acepta sus invitaciones
 
 ---
 
-## Flujo de Trabajo YouTube (Fórmula 10X)
+## Edge Functions (Backend)
 
-El tablero viene preconfigurado con 7 columnas que representan el pipeline de producción:
+Las edge functions corren en Deno (Supabase Edge Runtime). Se despliegan con `npx supabase functions deploy`.
 
-### Pipeline de columnas
+### `ai-assist`
 
-```
-1. Ideas (Océano Azul)         → Brainstorming de ideas con estrategia blue ocean
-2. Títulos (Método Linden)     → Generación de 50+ variantes de títulos
-3. Guion (Gancho 8s)           → Escritura del guion con gancho optimizado
-4. Miniaturas (CTR Alto)       → Diseño de miniaturas (Rostro + Texto + Contexto)
-5. Edición (Retención)         → Edición con cambio visual cada 10 segundos
-6. Publicación (Interlinking)  → SEO, etiquetas, links y comentario fijado
-7. Ataque al Corazón (<24h)    → Monitorización de CTR en las primeras 2 horas
-```
+Proxy seguro para la API de Gemini. Desplegado con `--no-verify-jwt` para permitir OPTIONS preflight.
 
-### Campos especializados por tarjeta
+- Valida bearer token manualmente via `requireUser()`
+- Normaliza contents, systemInstruction y config del request
+- Llama a `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+- Mapea legacy model aliases a modelos actuales
+- Retorna texto, functionCalls y candidates
 
-Cada tarjeta de video tiene campos personalizados que guían al creador por el proceso:
+### `youtube-channel-data`
 
-| Campo | Propósito |
-|-------|-----------|
-| **Método Linden** | Escribir múltiples variantes de título usando brecha de curiosidad y SEO |
-| **Gancho 8s** | Definir el hook de los primeros 8 segundos (Start with End / Dolor / Ruptura) |
-| **Narrativa** | Estructurar el storytelling: "Quería X, PERO pasó Y, POR LO TANTO hice Z" |
-| **Checklist Miniatura** | Verificar los 3 elementos: Rostro, Texto, Contexto |
-| **CTR a 2H** | Registrar y monitorear el CTR en las primeras 2 horas post-publicación |
-| **Interlinking** | URL del video a enlazar (efecto "telaraña" / rebufo) |
-| **Link Drive** | Enlace a los brutos/recursos en Google Drive |
+Obtiene KPIs y videos recientes de un canal YouTube usando la YouTube Data API v3.
 
-### Alerta de CTR
+### `accept-invitation`
 
-El campo CTR a 2 horas incluye feedback visual:
-- **CTR < 4%** → Fondo rojo + alerta: "¡Cambia miniatura/título AHORA!"
-- **CTR >= 4%** → Fondo verde + mensaje: "CTR Saludable. Mantén el impulso."
+Acepta una invitacion pendiente: crea el `board_member` y marca la invitacion como `'accepted'`.
+
+### `remove-board-member`
+
+Remueve un miembro de un board. Solo el owner puede ejecutar esta accion.
+
+### Utilidades compartidas (`_shared/`)
+
+- **`cors.ts`**: Headers CORS (`Access-Control-Allow-Origin: *`) y helper `jsonResponse()`
+- **`auth.ts`**: `requireUser()` (valida bearer token) y `createAdminClient()` (service role)
 
 ---
 
-## Configuración y Despliegue
+## Sistema de Presencia
+
+### Arquitectura
+
+```
+Presence Controller (src/lib/presence.ts)
+  → createPresenceController(user, context)
+  → Heartbeat cada 30 segundos
+  → Eventos: came_online, entered_board, left_board, went_offline
+
+Base de datos:
+  → presence_sessions (sesion activa por tab)
+  → presence_events (log de eventos)
+
+Vista:
+  → board_online_members (DISTINCT ON user_id, filtro heartbeat < 75s)
+```
+
+### Ciclo de vida
+
+1. **Inicio**: Al autenticarse, se crea un `PresenceController` con `sessionId` unico
+2. **Cleanup**: Se eliminan sesiones stale del mismo usuario (`cleanupStaleSessions`)
+3. **Heartbeat**: Cada 30s, se hace `upsertPresenceSession` con timestamp actual
+4. **Cambio de vista**: `updateContext()` actualiza `activeSurface` y `boardId`
+5. **Cierre**: `stop()` envia eventos `left_board` + `went_offline` y elimina la sesion
+6. **Tab visibility**: Al volver a la tab, se sincroniza inmediatamente
+
+### Deduplicacion
+
+La vista `board_online_members` usa `DISTINCT ON (board_id, user_id)` para mostrar solo la sesion mas reciente por usuario, evitando que recargas de pagina o tabs multiples inflen el conteo.
+
+---
+
+## Flujo de Trabajo YouTube (Formula 10X)
+
+### Production Stages (12 fases)
+
+| Stage ID | Fase | Owner |
+|----------|------|-------|
+| `idea` | Idea y concepto | Creador |
+| `research` | Investigacion | Creador |
+| `title_hook` | Titulo y hook | Creador |
+| `script` | Guion | Creador |
+| `preproduction` | Pre-produccion | Creador |
+| `recording` | Grabacion | Creador |
+| `editing_v1` | Edicion v1 | Editor |
+| `review_feedback` | Review y feedback | Creador |
+| `thumbnail_seo` | Thumbnail y SEO | Creador |
+| `upload_schedule` | Upload y programacion | Creador |
+| `publish_followup` | Publicacion y seguimiento | Creador |
+| `recycle_shorts` | Reciclar a Shorts | Editor |
+
+### Status por stage
+
+- `pending` — No iniciado
+- `in_progress` — En progreso
+- `blocked` — Bloqueado (requiere accion)
+- `done` — Completado
+
+### Schedule Status
+
+- `idea` — Solo idea, sin timeline
+- `active` — En progreso normal
+- `extra_active` — Video extra (no planificado)
+- `at_risk` — Atrasado, puede recuperarse
+- `overdue` — Fuera de plazo
+- `blocked` — Bloqueado por dependencia
+- `completed` — Publicado
+
+### Plantillas de Checklists
+
+**Formula 10X (Video Largo):**
+1. Nicho / Angulo unico definido
+2. Investigacion SEO + 50 Titulos listos
+3. Gancho perfecto de 8s
+4. Storytelling estructural ("Queria X, PERO paso Y...")
+5. Grabacion completada
+6. Edicion: Cambio visual cada 10s
+7. Miniatura disenada (Rostro, Texto, Contexto)
+8. SEO, Etiquetas y Links de afiliados
+9. Comentario fijado para Interlinking
+10. Video Programado y Publicado
+11. Monitorizacion CTR 2H
+
+**Sistema de Shorts:**
+1. Visualmente atractivo (1-3s Gancho)
+2. Formato repetible disenado
+3. Loopabilidad infinita asegurada
+4. Llamado a la accion rapido
+5. Publicado (Top of Funnel)
+
+---
+
+## Configuracion y Despliegue
 
 ### Desarrollo local
 
 ```bash
-# 1. Instalar dependencias
 npm install
-
-# 2. Configurar variables de entorno
-# Crear .env.local con tu GEMINI_API_KEY
-
-# 3. Iniciar servidor de desarrollo
+cp .env.example .env
+# Configurar VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, etc.
 npm run dev
 # → http://localhost:3000
 ```
 
 ### Scripts disponibles
 
-| Script | Comando | Descripción |
+| Script | Comando | Descripcion |
 |--------|---------|-------------|
 | `dev` | `vite --port=3000 --host=0.0.0.0` | Servidor de desarrollo con HMR |
-| `build` | `vite build` | Compilar para producción (output en `dist/`) |
-| `preview` | `vite preview` | Previsualizar build de producción |
+| `build` | `vite build` | Compilar para produccion (output en `dist/`) |
+| `preview` | `vite preview` | Previsualizar build de produccion |
 | `clean` | `rm -rf dist` | Limpiar directorio de build |
-| `lint` | `tsc --noEmit` | Verificación de tipos TypeScript |
+| `lint` | `tsc --noEmit` | Verificacion de tipos TypeScript |
 
-### Despliegue (Firebase Hosting)
+### Despliegue a produccion
 
+**Frontend** (Cloudflare Workers via GitHub):
 ```bash
-# Build de producción
-npm run build
+# Push a main → Cloudflare auto-rebuild
+git push origin main
+```
+Las variables `VITE_*` se configuran en Cloudflare Dashboard > Build settings > Environment variables.
 
-# Desplegar a Firebase Hosting
-firebase deploy --only hosting
+**Edge Functions** (Supabase):
+```bash
+SUPABASE_ACCESS_TOKEN=<token> npx supabase functions deploy ai-assist \
+  --project-ref alcgeficxobsegeycrtu --no-verify-jwt
 ```
 
-**Configuración de hosting** (`firebase.json`):
-- Sitio: `jesus-frameflow`
-- Directorio público: `dist/`
-- SPA rewrite: todas las rutas redirigen a `/index.html`
-- Headers de caché deshabilitados para archivos en `dist/`
+**Secretos** (Supabase):
+```bash
+SUPABASE_ACCESS_TOKEN=<token> npx supabase secrets set \
+  GEMINI_API_KEY=<key> \
+  --project-ref alcgeficxobsegeycrtu
+```
+
+**Migraciones SQL remotas** (via Management API):
+```bash
+curl -X POST "https://api.supabase.com/v1/projects/alcgeficxobsegeycrtu/database/query" \
+  -H "Authorization: Bearer <access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "..."}'
+```
 
 ---
 
 ## Variables de Entorno
 
-| Variable | Requerida | Descripción |
+### Frontend (build-time, prefijo `VITE_`)
+
+| Variable | Requerida | Descripcion |
 |----------|-----------|-------------|
-| `GEMINI_API_KEY` | Sí | API key de Google Gemini para funcionalidades de IA |
-| `APP_URL` | No | URL de la aplicación (inyectada en Cloud Run) |
+| `VITE_SUPABASE_URL` | Si | URL del proyecto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Si | Anon/publishable key de Supabase |
+| `VITE_SUPABASE_GOOGLE_ENABLED` | No | Habilitar Google OAuth (`true`/`false`, default: `true`) |
+| `VITE_SUPABASE_AUTH_REDIRECT_PATH` | No | Path de callback OAuth (default: `/auth/callback`) |
+| `VITE_SUPABASE_AUTH_REDIRECT_URL` | No | URL completa de callback (override) |
+| `VITE_GEMINI_API_KEY` | No | API key de Gemini para fallback directo (solo dev) |
+| `VITE_ENABLE_DIRECT_GEMINI` | No | Habilitar Gemini directo en produccion (`true`/`false`) |
 
-La API key de Gemini se inyecta en tiempo de build via `vite.config.ts`:
+### Edge Functions (secretos en Supabase)
 
-```typescript
-define: {
-  'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY),
-}
-```
+| Variable | Descripcion |
+|----------|-------------|
+| `GEMINI_API_KEY` | API key de Google Gemini para `ai-assist` |
+| `SUPABASE_URL` | Auto-configurada por Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auto-configurada por Supabase |
+| `SUPABASE_ANON_KEY` | Auto-configurada por Supabase |
 
----
+### Configuracion de Cloudflare
 
-## Estructura de Firestore
-
-```
-firestore/
-├── users/
-│   └── {uid}/
-│       ├── uid: string
-│       ├── email: string
-│       ├── displayName: string
-│       └── photoURL: string
-│
-└── boards/
-    └── {boardId}/
-        ├── id: string
-        ├── title: string
-        ├── ownerId: string
-        ├── members: string[]
-        ├── lists: List[]
-        ├── cards: { [cardId]: Card }
-        ├── createdAt: string (ISO)
-        └── updatedAt: string (ISO)
-```
-
-> **Nota**: Todo el estado del tablero (listas, tarjetas, checklists) se almacena como un solo documento de Firestore. Esto simplifica la sincronización en tiempo real pero tiene un límite de 1MB por documento.
+Las variables `VITE_*` deben configurarse en **Cloudflare Dashboard > Workers & Pages > Settings > Build settings > Environment variables** para que se inyecten durante el build.
 
 ---
 
-## Sistema de Diseño
+## Sistema de Diseno
 
 ### Design Tokens (`index.css`)
 
-La aplicación define variables CSS personalizadas para mantener consistencia visual:
-
 ```css
 :root {
-  --ff-primary: #2563eb;        /* Azul principal */
-  --ff-primary-dark: #1d4ed8;   /* Azul oscuro */
-  --ff-accent: #6366f1;         /* Indigo acento */
-  --ff-surface: rgba(255,255,255,0.65);  /* Superficie glass */
+  --ff-primary: #2563eb;
+  --ff-primary-dark: #1d4ed8;
+  --ff-accent: #6366f1;
+  --ff-surface: rgba(255,255,255,0.65);
   --ff-surface-solid: #ffffff;
-  --ff-bg: #f1f5f9;             /* Fondo general */
-  --ff-bg-subtle: #f8fafc;      /* Fondo sutil */
+  --ff-bg: #f1f5f9;
+  --ff-bg-subtle: #f8fafc;
   --ff-border: rgba(0,0,0,0.06);
-  --ff-shadow-sm/md/lg/xl       /* 4 niveles de sombra */
-  --ff-radius: 0.75rem;         /* Border radius estándar */
+  --ff-shadow-sm/md/lg/xl
+  --ff-radius: 0.75rem;
   --ff-radius-lg: 1rem;
   --ff-radius-xl: 1.25rem;
 }
@@ -799,12 +835,12 @@ La aplicación define variables CSS personalizadas para mantener consistencia vi
 | `.ff-slide-up` | Desliza hacia arriba con scale | Cards, modales |
 | `.ff-scale-in` | Escala desde 0.95 | Login, paneles |
 | `.ff-fade-in` | Fade de opacidad | Transiciones suaves |
-| `.ff-float` | Flotación vertical sutil | Elementos decorativos |
+| `.ff-float` | Flotacion vertical sutil | Elementos decorativos |
 
 ### Estilos globales
 
-- **Tipografía**: Inter (Google Fonts) con font-smoothing antialiased
-- **Scrollbar personalizado**: 6px delgado con thumb semi-transparente (webkit + Firefox)
+- **Tipografia**: Inter (Google Fonts) con font-smoothing antialiased
+- **Scrollbar personalizado**: 6px delgado con thumb semi-transparente
 - **Glass effect** (`.ff-glass`): backdrop-blur + borde semi-transparente
 - **Card shadow** (`.ff-card-shadow`): sombra que se intensifica en hover
-- **Overflow protection**: `overflow-x: hidden` en html/body/#root para prevenir scroll horizontal
+- **Temas**: dark, light, soft (gestionados via `useTheme.tsx`)

@@ -4,7 +4,7 @@
 
 **Tablero Kanban con IA para creadores de YouTube y sus equipos**
 
-[Ver App](https://jesus-frameflow.web.app) · [Documentacion Tecnica](DOCS.md)
+[Ver App](https://frameflow1.frameflow.workers.dev/) · [Documentacion Tecnica](DOCS.md) · [Guia de Equipo](GUIA_EQUIPO.md)
 
 </div>
 
@@ -12,111 +12,117 @@
 
 ## Que es FrameFlow?
 
-FrameFlow es una herramienta de gestion de proyectos tipo Kanban para creadores de contenido en YouTube. Combina tablero colaborativo, asistentes con Gemini, dashboard de produccion y ahora un backend seguro para integraciones sensibles.
+FrameFlow es una herramienta de gestion de proyectos tipo Kanban para creadores de contenido en YouTube. Combina tablero colaborativo en tiempo real, asistentes con Gemini AI, dashboard de produccion y un backend seguro con Supabase.
 
 ## Caracteristicas principales
 
-- Tablero Kanban de 7 fases para produccion de videos
-- Chatbot IA con function calling sobre el tablero
+- Tablero Kanban con pipeline de 12 fases para produccion de videos
+- Chatbot IA (Gemini) con function calling sobre el tablero
+- Wizard "Idea first + IA asistida" para crear videos desde cero
 - Dashboard con metricas, cuellos de botella e interlinking
 - Grabacion y transcripcion de audio en tarjetas
-- Colaboracion en tiempo real via Firebase Auth + Firestore
-- Backend seguro con Firebase Functions para YouTube y gestion de miembros
+- Colaboracion en tiempo real con roles (Creador / Editor / Viewer) y presencia
+- Sistema de invitaciones por email (acepta usuarios sin cuenta)
+- SEO automatizado: keywords, descripcion, hashtags con IA
 
 ## Stack
 
 | Categoria | Tecnologia | Version |
 |-----------|------------|---------|
 | Frontend | React + TypeScript + Vite | 19 / 5.8 / 6.2 |
-| Backend | Firebase Auth + Firestore + Functions | 12.11 / 2nd gen |
-| IA | Google Gemini (`@google/genai`) | 1.29.0 |
+| Backend | Supabase (PostgreSQL + Auth + Realtime + Edge Functions) | — |
+| IA | Google Gemini (2.5-flash, 2.0-flash-lite, 2.5-pro) | REST API |
 | UI | Tailwind CSS + lucide-react | 4.1 / 0.546 |
+| Hosting | Cloudflare Workers (via GitHub) | — |
 
 ## Inicio rapido
 
 ### Prerrequisitos
 
 - Node.js 20+
-- Cuenta de Google para autenticacion Firebase
-- API key de Gemini en `.env`
+- Cuenta de Google para autenticacion
+- Proyecto Supabase configurado
+- API key de Gemini
 
 ### Instalacion
 
 ```bash
 # 1. Clonar el proyecto
-git clone <repo-url>
+git clone https://github.com/Pcxddg/frameflow.git
 cd frameflow
 
-# 2. Instalar frontend
+# 2. Instalar dependencias
 npm install
 
 # 3. Configurar entorno local
 cp .env.example .env
-# Editar .env y anadir GEMINI_API_KEY
+# Editar .env con tus credenciales de Supabase y Gemini
 
-# 4. Instalar Firebase Functions
-cd functions
-npm install
-cd ..
-
-# 5. Levantar frontend
+# 4. Levantar frontend
 npm run dev
+# → http://localhost:3000
 ```
 
-## Despliegue y secretos
+## Variables de entorno
 
-### Flujo normal de despliegue
+| Variable | Requerida | Descripcion |
+|----------|-----------|-------------|
+| `VITE_SUPABASE_URL` | Si | URL del proyecto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Si | Anon/publishable key de Supabase |
+| `VITE_SUPABASE_GOOGLE_ENABLED` | No | Habilitar Google OAuth (`true`/`false`) |
+| `VITE_SUPABASE_AUTH_REDIRECT_PATH` | No | Path de callback OAuth (default: `/auth/callback`) |
+| `VITE_GEMINI_API_KEY` | No | API key de Gemini para fallback directo (dev) |
+| `GEMINI_API_KEY` | Si* | API key para la edge function `ai-assist` (se configura como secreto en Supabase) |
+
+## Despliegue
+
+### Frontend (Cloudflare Workers)
+
+El frontend se despliega automaticamente al hacer push a `main` en GitHub:
 
 ```bash
-# 1. Login local contra Firebase
-firebase login
-
-# 2. Asegurar dependencias de functions
-cd functions
-npm install
-cd ..
-
-# 3. Configurar secreto backend para YouTube
-firebase functions:secrets:set YOUTUBE_API_KEY
-
-# 4. Publicar
-npm run build
-firebase deploy
+git push origin main
+# Cloudflare detecta el push y reconstruye automaticamente
 ```
 
-### Credenciales administrativas locales
+Las variables `VITE_*` se configuran en **Cloudflare Dashboard > Settings > Build settings > Environment variables**.
 
-- La service account no debe vivir dentro del repo.
-- Para migraciones o utilidades admin usa una credencial local fuera del workspace.
-- Exporta `GOOGLE_APPLICATION_CREDENTIALS` solo cuando la necesites.
-- Script de migracion incluido:
+### Edge Functions (Supabase)
 
 ```bash
-cd functions
-node scripts/migrate-hardening.mjs
+# Configurar secretos
+SUPABASE_ACCESS_TOKEN=<token> npx supabase secrets set \
+  GEMINI_API_KEY=<key> \
+  --project-ref <ref>
+
+# Desplegar funciones
+SUPABASE_ACCESS_TOKEN=<token> npx supabase functions deploy ai-assist \
+  --project-ref <ref> --no-verify-jwt
 ```
 
-## Scripts utiles
+### SQL remoto (Supabase Management API)
 
-### Root
+Para ejecutar migraciones en la base de datos remota:
 
-- `npm run dev`
-- `npm run build`
-- `npm run lint`
-- `npm run test:rules`
+```bash
+curl -X POST "https://api.supabase.com/v1/projects/<ref>/database/query" \
+  -H "Authorization: Bearer <access-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "SELECT 1;"}'
+```
 
-### Reglas Firestore
+## Scripts
 
-- El test `npm run test:rules` usa el emulador de Firestore.
-- Firebase Emulator ahora requiere Java 21 o superior.
-- Si tu maquina no tiene Java 21+, el test no podra arrancar aunque el codigo este bien.
-
-### Functions
-
-- `cd functions && npm run serve`
-- `cd functions && npm run deploy`
-- `cd functions && npm run migrate:hardening`
+| Script | Comando | Descripcion |
+|--------|---------|-------------|
+| `dev` | `vite --port=3000 --host=0.0.0.0` | Servidor de desarrollo con HMR |
+| `build` | `vite build` | Build de produccion (output en `dist/`) |
+| `preview` | `vite preview` | Previsualizar build local |
+| `clean` | `rm -rf dist` | Limpiar directorio de build |
+| `lint` | `tsc --noEmit` | Verificacion de tipos TypeScript |
 
 ## Produccion
 
-- App: https://jesus-frameflow.web.app
+- **App**: https://frameflow1.frameflow.workers.dev/
+- **Repo**: https://github.com/Pcxddg/frameflow
+- **Supabase**: proyecto `alcgeficxobsegeycrtu`
