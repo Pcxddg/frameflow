@@ -74,7 +74,8 @@ create table if not exists public.lists (
   position integer not null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  unique (board_id, position)
+  -- position ordering enforced by RPC functions, not DB constraint
+  constraint lists_no_unique_position check (true)
 );
 
 create table if not exists public.cards (
@@ -110,8 +111,7 @@ create table if not exists public.cards (
   seo_source_text text not null default '',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  constraint cards_content_type_check check (content_type in ('long', 'short') or content_type is null),
-  unique (list_id, position)
+  constraint cards_content_type_check check (content_type in ('long', 'short') or content_type is null)
 );
 
 create table if not exists public.card_labels (
@@ -130,8 +130,7 @@ create table if not exists public.checklists (
   title text not null,
   position integer not null,
   created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
-  unique (card_id, position)
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 create table if not exists public.checklist_items (
@@ -141,8 +140,7 @@ create table if not exists public.checklist_items (
   is_completed boolean not null default false,
   position integer not null,
   created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
-  unique (checklist_id, position)
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 create table if not exists public.production_flows (
@@ -179,8 +177,7 @@ create table if not exists public.production_stages (
   position integer not null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
-  primary key (card_id, stage_id),
-  unique (card_id, position)
+  primary key (card_id, stage_id)
 );
 
 create table if not exists public.invitations (
@@ -247,6 +244,7 @@ create index if not exists idx_cards_board on public.cards(board_id, position);
 create index if not exists idx_cards_list on public.cards(list_id, position);
 create index if not exists idx_checklists_card on public.checklists(card_id, position);
 create index if not exists idx_checklist_items_checklist on public.checklist_items(checklist_id, position);
+create index if not exists idx_production_stages_card_position on public.production_stages(card_id, position);
 create index if not exists idx_audit_events_board on public.audit_events(board_id, at desc);
 create index if not exists idx_invitations_board on public.invitations(board_id, created_at desc);
 create index if not exists idx_invitations_email on public.invitations(invitee_email_lowercase, status);
