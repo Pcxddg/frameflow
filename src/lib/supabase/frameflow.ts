@@ -384,8 +384,16 @@ async function runDeleteIfMissing(table: string, boardId: string, ids: string[])
 async function upsertChunks(table: string, rows: any[], onConflict?: string) {
   if (!rows.length) return;
   for (const batch of chunk(rows)) {
-    const { error } = await supabase.from(table as any).upsert(batch, onConflict ? { onConflict } : undefined);
-    if (error) throw error;
+    // Strip undefined values via JSON round-trip to avoid PostgREST column/null mismatches
+    const cleanBatch = JSON.parse(JSON.stringify(batch));
+    const { error } = await supabase.from(table as any).upsert(cleanBatch, {
+      ...(onConflict ? { onConflict } : {}),
+      defaultToNull: false,
+    });
+    if (error) {
+      console.error(`upsert ${table} failed:`, error.message, error.details, error.hint);
+      throw error;
+    }
   }
 }
 
@@ -702,21 +710,23 @@ export async function saveBoardSnapshot(board: Board, auditEvents: AuditEvent[] 
       });
 
       if (card.productionFlow) {
+        const pf = card.productionFlow;
+        const now = new Date().toISOString();
         productionFlowRows.push({
           card_id: card.id,
-          template_id: card.productionFlow.templateId,
-          publish_at: card.productionFlow.publishAt,
-          created_from_wizard_at: card.productionFlow.createdFromWizardAt,
-          current_stage_id: card.productionFlow.currentStageId,
-          schedule_mode: card.productionFlow.scheduleMode,
-          is_tight_schedule: card.productionFlow.isTightSchedule,
-          kickoff_at: toIsoString(card.productionFlow.kickoffAt),
-          working_days_budget: card.productionFlow.workingDaysBudget,
-          work_mode: card.productionFlow.workMode,
-          schedule_status: card.productionFlow.scheduleStatus,
-          raw: card.productionFlow,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          template_id: pf.templateId || 'default',
+          publish_at: pf.publishAt || now,
+          created_from_wizard_at: pf.createdFromWizardAt || now,
+          current_stage_id: pf.currentStageId || '',
+          schedule_mode: pf.scheduleMode || 'auto',
+          is_tight_schedule: pf.isTightSchedule ?? false,
+          kickoff_at: toIsoString(pf.kickoffAt),
+          working_days_budget: pf.workingDaysBudget ?? 0,
+          work_mode: pf.workMode || 'solo',
+          schedule_status: pf.scheduleStatus || 'on_track',
+          raw: JSON.parse(JSON.stringify(pf)),
+          created_at: now,
+          updated_at: now,
         });
 
         card.productionFlow.stages.forEach((stage, stagePosition) => {
