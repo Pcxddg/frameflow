@@ -30,6 +30,19 @@ const DEFAULT_LABELS: Label[] = [
   { id: 'label-orange', name: 'Monetizado', color: 'orange' },
 ];
 
+/** Keep last occurrence for each unique key value */
+function dedup(rows: any[], key: string): any[] {
+  const map = new Map<string, any>();
+  for (const row of rows) map.set(row[key], row);
+  return [...map.values()];
+}
+
+function dedupComposite(rows: any[], keys: string[]): any[] {
+  const map = new Map<string, any>();
+  for (const row of rows) map.set(keys.map((k) => row[k]).join('\0'), row);
+  return [...map.values()];
+}
+
 function toIsoString(value?: string | null) {
   if (!value) return null;
   const parsed = new Date(value);
@@ -781,10 +794,10 @@ export async function saveBoardSnapshot(board: Board, auditEvents: AuditEvent[] 
   }
 
   await insertChunks('card_labels', cardLabelRows);
-  await upsertChunks('checklists', checklistRows, 'id');
-  await upsertChunks('checklist_items', checklistItemRows, 'id');
-  await upsertChunks('production_flows', productionFlowRows, 'card_id');
-  await upsertChunks('production_stages', productionStageRows, 'card_id,stage_id');
+  await upsertChunks('checklists', dedup(checklistRows, 'id'), 'id');
+  await upsertChunks('checklist_items', dedup(checklistItemRows, 'id'), 'id');
+  await upsertChunks('production_flows', dedup(productionFlowRows, 'card_id'), 'card_id');
+  await upsertChunks('production_stages', dedupComposite(productionStageRows, ['card_id', 'stage_id']), 'card_id,stage_id');
 
   if (auditEvents.length > 0) {
     await upsertChunks('audit_events', auditEvents.map((event) => ({
