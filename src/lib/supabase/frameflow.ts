@@ -384,6 +384,119 @@ function cardToDb(boardId: string, card: Card, position: number) {
   };
 }
 
+function buildCardGraphRows(boardId: string, card: Card) {
+  const cardLabelRows: any[] = [];
+  const checklistRows: any[] = [];
+  const checklistItemRows: any[] = [];
+  const productionFlowRows: any[] = [];
+  const productionStageRows: any[] = [];
+
+  (card.labels || []).forEach((label) => {
+    cardLabelRows.push({
+      board_id: boardId,
+      card_id: card.id,
+      label_id: label.id,
+    });
+  });
+
+  (card.checklists || []).forEach((checklist, checklistPosition) => {
+    checklistRows.push({
+      id: checklist.id,
+      card_id: card.id,
+      title: checklist.title,
+      position: checklistPosition,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    checklist.items.forEach((item, itemPosition) => {
+      checklistItemRows.push({
+        id: item.id,
+        checklist_id: checklist.id,
+        text: item.text,
+        is_completed: item.isCompleted,
+        position: itemPosition,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    });
+  });
+
+  if (card.productionFlow) {
+    const pf = card.productionFlow;
+    const now = new Date().toISOString();
+    productionFlowRows.push({
+      card_id: card.id,
+      template_id: pf.templateId || 'default',
+      publish_at: pf.publishAt || now,
+      created_from_wizard_at: pf.createdFromWizardAt || now,
+      current_stage_id: pf.currentStageId || '',
+      schedule_mode: pf.scheduleMode || 'auto',
+      is_tight_schedule: pf.isTightSchedule ?? false,
+      kickoff_at: toIsoString(pf.kickoffAt),
+      working_days_budget: pf.workingDaysBudget ?? 0,
+      work_mode: pf.workMode || 'solo',
+      schedule_status: pf.scheduleStatus || 'on_track',
+      raw: JSON.parse(JSON.stringify(pf)),
+      created_at: now,
+      updated_at: now,
+    });
+
+    card.productionFlow.stages.forEach((stage, stagePosition) => {
+      productionStageRows.push({
+        card_id: card.id,
+        stage_id: stage.id,
+        label: stage.label,
+        macro_column_id: stage.macroColumnId,
+        owner_role: stage.ownerRole,
+        fallback_owner_role: stage.fallbackOwnerRole,
+        deliverable: stage.deliverable,
+        status: stage.status || 'pending',
+        due_at: toIsoString(stage.dueAt) || new Date().toISOString(),
+        completed_at: toIsoString(stage.completedAt),
+        notes: stage.notes || null,
+        checklist_title: stage.checklistTitle,
+        has_ai_draft: stage.hasAIDraft || false,
+        position: stagePosition,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    });
+  }
+
+  return {
+    cardLabelRows,
+    checklistRows,
+    checklistItemRows,
+    productionFlowRows,
+    productionStageRows,
+  };
+}
+
+function buildAuditEventRows(auditEvents: AuditEvent[]) {
+  return auditEvents.map((event) => ({
+    id: event.id,
+    board_id: event.boardId,
+    card_id: event.cardId || null,
+    actor_email: event.actorEmail,
+    type: event.type,
+    at: event.at,
+    from_list_id: event.fromListId || null,
+    to_list_id: event.toListId || null,
+    payload: event.payload || {},
+  }));
+}
+
+function findCardPosition(board: Board, cardId: string, listId: string) {
+  const list = board.lists.find((item) => item.id === listId);
+  if (!list) return 0;
+
+  const position = list.cardIds.indexOf(cardId);
+  if (position >= 0) return position;
+
+  return Math.max(0, list.cardIds.length - 1);
+}
+
 async function runDeleteIfMissing(table: string, boardId: string, ids: string[]) {
   let query = supabase.from(table as any).delete().eq('board_id', boardId);
   if (ids.length > 0) {
@@ -415,6 +528,121 @@ async function insertChunks(table: string, rows: any[]) {
     const { error } = await supabase.from(table as any).insert(batch);
     if (error) throw error;
   }
+}
+
+export async function replaceCardGraphMutation(boardId: string, card: Card, auditEvents: AuditEvent[] = []) {
+  const {
+    cardLabelRows,
+    checklistRows,
+    checklistItemRows,
+    productionFlowRows,
+    productionStageRows,
+  } = buildCardGraphRows(boardId, card);
+
+  const [{ error: cardLabelsError }, { error: checklistError }, { error: flowError }] = await Promise.all([
+    supabase.from('card_labels').delete().eq('board_id', boardId).eq('card_id', card.id),
+    supabase.from('checklists').delete().eq('card_id', card.id),
+    supabase.from('production_flows').delete().eq('card_id', card.id),
+  ]);
+  if (cardLabelsError) throw cardLabelsError;
+  if (checklistError) throw checklistError;
+  if (flowError) throw flowError;
+
+  await insertChunks('card_labels', dedupComposite(cardLabelRows, ['card_id', 'label_id']));
+  await upsertChunks('checklists', dedup(checklistRows, 'id'), 'id');
+  await upsertChunks('checklist_items', dedup(checklistItemRows, 'id'), 'id');
+  await upsertChunks('production_flows', dedup(productionFlowRows, 'card_id'), 'card_id');
+  await upsertChunks('production_stages', dedupComposite(productionStageRows, ['card_id', 'stage_id']), 'card_id,stage_id');
+
+  if (auditEvents.length > 0) {
+    await upsertChunks('audit_events', buildAuditEventRows(auditEvents), 'id');
+  }
+}
+
+export async function createCardMutation(
+  board: Board,
+  card: Card,
+  targetIndex?: number,
+  auditEvents: AuditEvent[] = []
+) {
+  const normalizedCard = normalizeCardForPersistence(card, board);
+  const position = typeof targetIndex === 'number'
+    ? targetIndex
+    : findCardPosition(board, normalizedCard.id, normalizedCard.listId);
+  const cardPayload = cardToDb(board.id, normalizedCard, position);
+
+  const { error } = await supabase.rpc('ff_insert_card', {
+    p_board_id: board.id,
+    p_list_id: normalizedCard.listId,
+    p_card: cardPayload,
+    p_target_index: position,
+  });
+  if (error) throw error;
+
+  await replaceCardGraphMutation(board.id, normalizedCard, auditEvents);
+}
+
+export async function updateCardContentMutation(
+  board: Board,
+  card: Card,
+  auditEvents: AuditEvent[] = []
+) {
+  const normalizedCard = normalizeCardForPersistence(card, board);
+  const cardPayload = cardToDb(
+    board.id,
+    normalizedCard,
+    findCardPosition(board, normalizedCard.id, normalizedCard.listId)
+  );
+
+  const { error } = await supabase.rpc('ff_update_card_core', {
+    p_board_id: board.id,
+    p_card_id: normalizedCard.id,
+    p_card: cardPayload,
+  });
+  if (error) throw error;
+
+  await replaceCardGraphMutation(board.id, normalizedCard, auditEvents);
+}
+
+export async function moveCardMutation(
+  board: Board,
+  card: Card,
+  sourceListId: string,
+  destListId: string,
+  destIndex: number,
+  auditEvents: AuditEvent[] = []
+) {
+  const normalizedCard = normalizeCardForPersistence(card, board);
+  const cardPayload = cardToDb(board.id, normalizedCard, destIndex);
+
+  const { error } = await supabase.rpc('ff_move_card', {
+    p_board_id: board.id,
+    p_card_id: normalizedCard.id,
+    p_source_list_id: sourceListId,
+    p_dest_list_id: destListId,
+    p_dest_index: destIndex,
+    p_card: cardPayload,
+  });
+  if (error) throw error;
+
+  await replaceCardGraphMutation(board.id, normalizedCard, auditEvents);
+}
+
+export async function deleteCardMutation(boardId: string, cardId: string, listId: string) {
+  const { error } = await supabase.rpc('ff_delete_card', {
+    p_board_id: boardId,
+    p_card_id: cardId,
+    p_list_id: listId,
+  });
+  if (error) throw error;
+}
+
+export async function repairListPositions(boardId: string, listId?: string | null) {
+  const { error } = await supabase.rpc('ff_repair_list_positions', {
+    p_board_id: boardId,
+    p_list_id: listId || null,
+  });
+  if (error) throw error;
 }
 
 export async function ensureProfile(user: AppUser): Promise<void> {
@@ -1100,7 +1328,28 @@ export function subscribeAuditEvents(boardId: string, callback: (events: AuditEv
 }
 
 export function getBackendReadNotice(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error || '');
+  const code = (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string'
+  )
+    ? (error as { code: string }).code
+    : '';
+  const message = (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  )
+    ? (error as { message: string }).message
+    : error instanceof Error
+      ? error.message
+      : String(error || '');
+
+  if (code === '23505' || /cards_list_id_position_key|duplicate key value violates unique constraint/i.test(message)) {
+    return 'Hubo un conflicto al reordenar tarjetas y FrameFlow ya esta resincronizando el tablero con Supabase.';
+  }
   if (/jwt|auth session missing|not authenticated/i.test(message)) {
     return 'Tu sesion en Supabase ya no es valida. Vuelve a entrar con Google para continuar.';
   }
@@ -1124,14 +1373,14 @@ export function buildInitialBoard(user: AppUser, title: string): Board {
       [user.emailLowercase]: 'owner',
     },
     lists: [
-      { id: 'list-1', title: 'Ideas (Oceano Azul)', cardIds: [] },
-      { id: 'list-2', title: 'Titulos (Metodo Linden)', cardIds: [] },
-      { id: 'list-3', title: 'Guion (Gancho 8s)', cardIds: [] },
-      { id: 'list-4', title: 'Miniaturas (CTR Alto)', cardIds: [] },
-      { id: 'list-5', title: 'Edicion (Retencion)', cardIds: [] },
-      { id: 'list-6', title: 'Publicacion (Interlinking)', cardIds: [] },
-      { id: 'list-7', title: 'Ataque al Corazon (<24h)', cardIds: [] },
-    ],
+      'Ideas (Oceano Azul)',
+      'Titulos (Metodo Linden)',
+      'Guion (Gancho 8s)',
+      'Miniaturas (CTR Alto)',
+      'Edicion (Retencion)',
+      'Publicacion (Interlinking)',
+      'Ataque al Corazon (<24h)',
+    ].map((title) => ({ id: `list-${uuidv4()}`, title, cardIds: [] })),
     cards: {},
     workflowConfig: mergeWorkflowConfig(),
     seoConfig: resolveBoardSeoConfig(),
