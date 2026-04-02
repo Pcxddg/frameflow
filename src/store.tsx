@@ -36,8 +36,12 @@ import { buildReadinessPayload, isExecutionPublishReady, trackProductEvent } fro
 import {
   buildInitialBoard,
   createBoardRecord,
+  createCardMutation,
+  deleteCardMutation,
   deleteBoardRecord,
+  fetchBoardSnapshot,
   getBackendReadNotice,
+  moveCardMutation,
   acceptPendingInvitations,
   inviteBoardMember as inviteBoardMemberRecord,
   removeBoardMember as removeBoardMemberRecord,
@@ -49,6 +53,7 @@ import {
   subscribePresence,
   subscribeToAuthState,
   ensureProfile,
+  updateCardContentMutation,
   updateBoardMeta as updateBoardMetaRecord,
 } from './lib/supabase/frameflow';
 
@@ -181,6 +186,52 @@ function stripUndefinedDeep<T>(value: T): T {
   }
 
   return value;
+}
+
+type KanbanMutationTelemetry = {
+  operation:
+    | 'create_card'
+    | 'create_video_from_flow'
+    | 'update_card'
+    | 'set_production_stage_status'
+    | 'update_production_stage'
+    | 'delete_card'
+    | 'move_card';
+  cardId?: string;
+  listId?: string;
+  destListId?: string;
+};
+
+function readBackendErrorCode(error: unknown) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string'
+  ) {
+    return (error as { code: string }).code;
+  }
+
+  return '';
+}
+
+function readBackendErrorMessage(error: unknown) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return error instanceof Error ? error.message : String(error || '');
+}
+
+function isKanbanConflictError(error: unknown) {
+  const code = readBackendErrorCode(error);
+  const message = readBackendErrorMessage(error);
+  return code === '23505' || /cards_list_id_position_key|duplicate key value violates unique constraint/i.test(message);
 }
 
 function hydrateBoardCards(nextBoard: Board): Board {
@@ -333,8 +384,12 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [currentBoardId, setCurrentBoardId] = useState<string | null>(null);
   const boardRef = useRef<Board | null>(null);
+  const currentBoardIdRef = useRef<string | null>(null);
+  const userRef = useRef<AppUser | null>(null);
   const persistQueueRef = useRef<Promise<void>>(Promise.resolve());
   const latestPersistMutationRef = useRef(0);
+  const scheduledRefreshMutationRef = useRef(0);
+  const refreshTimeoutRef = useRef<number | null>(null);
   const currentUserRole = getCurrentUserRole(board, user);
   const isBoardOwner = currentUserRole === 'owner';
   const canEditBoard = currentUserRole === 'owner' || currentUserRole === 'editor';
@@ -399,6 +454,20 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     boardRef.current = board;
   }, [board]);
+
+  useEffect(() => {
+    currentBoardIdRef.current = currentBoardId;
+  }, [currentBoardId]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => () => {
+    if (refreshTimeoutRef.current !== null) {
+      window.clearTimeout(refreshTimeoutRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState((nextUser) => {
@@ -585,6 +654,220 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [currentBoardId]);
 
+  const applyBoardState = (nextBoard: Board | null) => {
+    const activeUser = userRef.current;
+
+    if (!nextBoard) {
+      setBoard(null);
+      boardRef.current = null;
+      if (activeUser) {
+        removeCachedBoard(activeUser.uid, currentBoardIdRef.current || '');
+      }
+      return;
+    }
+
+    const hydratedBoard = hydrateBoardCards(nextBoard);
+    setBoard(hydratedBoard);
+    boardRef.current = hydratedBoard;
+    setBoards((previousBoards) => {
+      const exists = previousBoards.some((item) => item.id === hydratedBoard.id);
+      if (!exists) return [hydratedBoard, ...previousBoards];
+      return previousBoards.map((item) => (item.id === hydratedBoard.id ? hydratedBoard : item));
+    });
+
+    if (activeUser) {
+      upsertCachedBoard(activeUser.uid, hydratedBoard);
+    }
+  };
+
+  const refreshCurrentBoardSnapshot = async (
+    boardId: string,
+    expectedMutationId: number,
+    telemetry?: KanbanMutationTelemetry,
+  ) => {
+    try {
+      const snapshot = await fetchBoardSnapshot(boardId);
+      if (latestPersistMutationRef.current !== expectedMutationId) return;
+      if (currentBoardIdRef.current !== boardId) return;
+
+      if (!snapshot) {
+        setBoard(null);
+        boardRef.current = null;
+        setCurrentBoardId(null);
+        const activeUser = userRef.current;
+        if (activeUser) {
+          localStorage.removeItem(getStoredBoardKey(activeUser.uid));
+          removeCachedBoard(activeUser.uid, boardId);
+        }
+        return;
+      }
+
+      applyBoardState(snapshot);
+      setReadNotice(null);
+      console.info('[frameflow.kanban.refresh]', {
+        boardId,
+        mutationId: expectedMutationId,
+        operation: telemetry?.operation || 'unknown',
+      });
+      trackProductEvent('kanban_authoritative_refresh', {
+        board_id: boardId,
+        card_id: telemetry?.cardId || null,
+        list_id: telemetry?.listId || null,
+        dest_list_id: telemetry?.destListId || null,
+        mutation_id: expectedMutationId,
+        operation: telemetry?.operation || 'unknown',
+      });
+    } catch (error) {
+      console.error('Error refreshing board snapshot from Supabase:', error);
+      if (latestPersistMutationRef.current !== expectedMutationId) return;
+      const notice = getBackendReadNotice(error);
+      if (notice) setReadNotice(notice);
+    }
+  };
+
+  const scheduleAuthoritativeRefresh = (
+    boardId: string,
+    expectedMutationId: number,
+    telemetry?: KanbanMutationTelemetry,
+  ) => {
+    scheduledRefreshMutationRef.current = Math.max(
+      scheduledRefreshMutationRef.current,
+      expectedMutationId,
+    );
+
+    if (refreshTimeoutRef.current !== null) {
+      window.clearTimeout(refreshTimeoutRef.current);
+    }
+
+    refreshTimeoutRef.current = window.setTimeout(() => {
+      refreshTimeoutRef.current = null;
+      void refreshCurrentBoardSnapshot(
+        boardId,
+        scheduledRefreshMutationRef.current,
+        telemetry,
+      );
+    }, 180);
+  };
+
+  const persistBoardMutation = async (
+    updatedBoard: Board,
+    remoteMutation: () => Promise<void>,
+    telemetry: KanbanMutationTelemetry,
+  ) => {
+    const targetBoardId = updatedBoard.id || currentBoardIdRef.current;
+    const activeUser = userRef.current;
+
+    if (!targetBoardId || !activeUser || !canEditBoard) {
+      console.warn('persistBoardMutation: skipped', {
+        targetBoardId: !!targetBoardId,
+        user: !!activeUser,
+        canEditBoard,
+        operation: telemetry.operation,
+      });
+      return;
+    }
+
+    const previousBoard = boardRef.current;
+    const nextBoard = stripUndefinedDeep({
+      ...hydrateBoardCards(updatedBoard),
+      updatedAt: new Date().toISOString(),
+    });
+    const mutationId = latestPersistMutationRef.current + 1;
+    latestPersistMutationRef.current = mutationId;
+
+    setSaveState('saving');
+    applyBoardState(nextBoard);
+
+    const queuedMutation = persistQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
+        try {
+          await remoteMutation();
+          const durationMs = Math.round(
+            (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt,
+          );
+
+          console.info('[frameflow.kanban.mutation]', {
+            status: 'ok',
+            mutationId,
+            boardId: targetBoardId,
+            operation: telemetry.operation,
+            cardId: telemetry.cardId || null,
+            listId: telemetry.listId || null,
+            destListId: telemetry.destListId || null,
+            durationMs,
+          });
+
+          if (mutationId === latestPersistMutationRef.current) {
+            setReadNotice(null);
+            setSaveState('saved');
+          }
+
+          scheduleAuthoritativeRefresh(targetBoardId, mutationId, telemetry);
+        } catch (error) {
+          const durationMs = Math.round(
+            (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startedAt,
+          );
+          const code = readBackendErrorCode(error);
+          const message = readBackendErrorMessage(error);
+
+          console.error('[frameflow.kanban.mutation]', {
+            status: 'error',
+            mutationId,
+            boardId: targetBoardId,
+            operation: telemetry.operation,
+            cardId: telemetry.cardId || null,
+            listId: telemetry.listId || null,
+            destListId: telemetry.destListId || null,
+            code,
+            message,
+            durationMs,
+          });
+
+          if (isKanbanConflictError(error)) {
+            trackProductEvent('kanban_save_conflict', {
+              board_id: targetBoardId,
+              card_id: telemetry.cardId || null,
+              list_id: telemetry.listId || null,
+              dest_list_id: telemetry.destListId || null,
+              mutation_id: mutationId,
+              operation: telemetry.operation,
+              error_code: code || null,
+            });
+          } else {
+            trackProductEvent('kanban_mutation_failed', {
+              board_id: targetBoardId,
+              card_id: telemetry.cardId || null,
+              list_id: telemetry.listId || null,
+              dest_list_id: telemetry.destListId || null,
+              mutation_id: mutationId,
+              operation: telemetry.operation,
+              error_code: code || null,
+            });
+          }
+
+          scheduleAuthoritativeRefresh(targetBoardId, mutationId, telemetry);
+          throw error;
+        }
+      });
+
+    persistQueueRef.current = queuedMutation.catch(() => undefined);
+
+    try {
+      await queuedMutation;
+    } catch (error) {
+      if (mutationId === latestPersistMutationRef.current && previousBoard) {
+        applyBoardState(previousBoard);
+      }
+
+      const notice = getBackendReadNotice(error);
+      if (notice) setReadNotice(notice);
+      setSaveState('error');
+    }
+  };
+
   const createBoard = async (title: string) => {
     if (!user) return;
 
@@ -593,6 +876,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     try {
       setSaveState('saving');
       await createBoardRecord(newBoard);
+      await saveBoardSnapshot(newBoard);
       upsertCachedBoard(user.uid, newBoard);
       setBoards((previousBoards) => [newBoard, ...previousBoards.filter((item) => item.id !== newBoard.id)]);
       setCurrentBoardId(newBoard.id);
@@ -603,67 +887,6 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       const notice = getBackendReadNotice(error);
       if (notice) setReadNotice(notice);
       setSaveState('error');
-    }
-  };
-
-  const persistBoardSnapshot = async (updatedBoard: Board, options?: { auditEvents?: AuditEvent[] }) => {
-    const targetBoardId = updatedBoard.id || currentBoardId;
-    if (!targetBoardId || !user || !canEditBoard) {
-      console.warn('persistBoardSnapshot: skipped', {
-        targetBoardId: !!targetBoardId,
-        user: !!user,
-        canEditBoard,
-      });
-      return;
-    }
-
-    const previousBoard = boardRef.current;
-    const hydratedBoard = hydrateBoardCards(updatedBoard);
-    const nextBoard = stripUndefinedDeep({
-      ...hydratedBoard,
-      updatedAt: new Date().toISOString(),
-    });
-    const mutationId = latestPersistMutationRef.current + 1;
-    latestPersistMutationRef.current = mutationId;
-
-    setSaveState('saving');
-    setBoard(nextBoard);
-    boardRef.current = nextBoard;
-    setBoards((previousBoards) => {
-      const exists = previousBoards.some((item) => item.id === targetBoardId);
-      if (!exists) return [nextBoard, ...previousBoards];
-      return previousBoards.map((item) => (item.id === targetBoardId ? nextBoard : item));
-    });
-    upsertCachedBoard(user.uid, nextBoard);
-
-    const savePromise = persistQueueRef.current
-      .catch(() => undefined)
-      .then(async () => {
-        await saveBoardSnapshot(nextBoard, options?.auditEvents || []);
-        if (mutationId === latestPersistMutationRef.current) {
-          setReadNotice(null);
-          setSaveState('saved');
-        }
-      });
-
-    persistQueueRef.current = savePromise.catch(() => undefined);
-
-    try {
-      await savePromise;
-    } catch (error) {
-      console.error('Error updating board in Supabase:', error);
-
-      if (mutationId === latestPersistMutationRef.current && previousBoard) {
-        setBoard(previousBoard);
-        boardRef.current = previousBoard;
-        setBoards((previousBoards) => previousBoards.map((item) => (
-          item.id === previousBoard.id ? previousBoard : item
-        )));
-        upsertCachedBoard(user.uid, previousBoard);
-        const notice = getBackendReadNotice(error);
-        if (notice) setReadNotice(notice);
-        setSaveState('error');
-      }
     }
   };
 
@@ -765,11 +988,21 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       contentType: newCard.contentType || 'undefined',
     });
 
-    persistBoardSnapshot({
+    const nextBoard = {
       ...activeBoard,
       lists: newLists,
       cards: { ...activeBoard.cards, [newCard.id]: newCard },
-    }, { auditEvents: auditEvent ? [auditEvent] : [] });
+    };
+
+    void persistBoardMutation(
+      nextBoard,
+      () => createCardMutation(nextBoard, newCard, undefined, auditEvent ? [auditEvent] : []),
+      {
+        operation: 'create_card',
+        cardId: newCard.id,
+        listId,
+      },
+    );
   };
 
   const createVideoFromFlow = (input: CreateVideoFromFlowInput) => {
@@ -894,9 +1127,18 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       ...buildReadinessPayload(createdExecution),
     });
 
-    persistBoardSnapshot(nextBoard, {
-      auditEvents: [createdEvent, flowEvent, aiSeededEvent, ...regeneratedEvents].filter((event): event is AuditEvent => !!event),
-    });
+    const auditEvents = [createdEvent, flowEvent, aiSeededEvent, ...regeneratedEvents]
+      .filter((event): event is AuditEvent => !!event);
+
+    void persistBoardMutation(
+      nextBoard,
+      () => createCardMutation(nextBoard, newCard, undefined, auditEvents),
+      {
+        operation: 'create_video_from_flow',
+        cardId: newCard.id,
+        listId: targetListId,
+      },
+    );
   };
 
   const updateCard = (cardId: string, updates: Partial<Card>) => {
@@ -969,13 +1211,23 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     trackPublishReadyTransition(activeBoard, currentCard, nextCard);
 
-    persistBoardSnapshot({
+    const nextBoard = {
       ...activeBoard,
       cards: {
         ...activeBoard.cards,
         [cardId]: nextCard,
       },
-    }, { auditEvents });
+    };
+
+    void persistBoardMutation(
+      nextBoard,
+      () => updateCardContentMutation(nextBoard, nextCard, auditEvents),
+      {
+        operation: 'update_card',
+        cardId,
+        listId: nextCard.listId,
+      },
+    );
   };
 
   const setProductionStageStatus = (cardId: string, stageId: ProductionStageId, status: ProductionStageStatus) => {
@@ -1030,13 +1282,23 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
 
     trackPublishReadyTransition(activeBoard, currentCard, nextCard);
 
-    persistBoardSnapshot({
+    const nextBoard = {
       ...activeBoard,
       cards: {
         ...activeBoard.cards,
         [cardId]: nextCard,
       },
-    }, { auditEvents: auditEvent ? [auditEvent] : [] });
+    };
+
+    void persistBoardMutation(
+      nextBoard,
+      () => updateCardContentMutation(nextBoard, nextCard, auditEvent ? [auditEvent] : []),
+      {
+        operation: 'set_production_stage_status',
+        cardId,
+        listId: nextCard.listId,
+      },
+    );
   };
 
   const updateProductionStage = (cardId: string, stageId: ProductionStageId, updates: Partial<{ dueAt: string; notes: string }>) => {
@@ -1064,13 +1326,23 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       if (auditEvent) auditEvents.push(auditEvent);
     }
 
-    persistBoardSnapshot({
+    const nextBoard = {
       ...activeBoard,
       cards: {
         ...activeBoard.cards,
         [cardId]: nextCard,
       },
-    }, { auditEvents });
+    };
+
+    void persistBoardMutation(
+      nextBoard,
+      () => updateCardContentMutation(nextBoard, nextCard, auditEvents),
+      {
+        operation: 'update_production_stage',
+        cardId,
+        listId: nextCard.listId,
+      },
+    );
   };
 
   const deleteCard = (cardId: string, listId: string) => {
@@ -1086,7 +1358,17 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const newCards = { ...activeBoard.cards };
     delete newCards[cardId];
 
-    persistBoardSnapshot({ ...activeBoard, lists: newLists, cards: newCards });
+    const nextBoard = { ...activeBoard, lists: newLists, cards: newCards };
+
+    void persistBoardMutation(
+      nextBoard,
+      () => deleteCardMutation(activeBoard.id, cardId, listId),
+      {
+        operation: 'delete_card',
+        cardId,
+        listId,
+      },
+    );
   };
 
   const moveCard = (sourceListId: string, destListId: string, _sourceIndex: number, destIndex: number, cardId: string) => {
@@ -1185,14 +1467,25 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    persistBoardSnapshot({
+    const nextBoard = {
       ...activeBoard,
       lists: newLists,
       cards: {
         ...activeBoard.cards,
         [cardId]: movedCardWithFlow
       }
-    }, { auditEvents });
+    };
+
+    void persistBoardMutation(
+      nextBoard,
+      () => moveCardMutation(nextBoard, movedCardWithFlow, sourceListId, destListId, destIndex, auditEvents),
+      {
+        operation: 'move_card',
+        cardId,
+        listId: sourceListId,
+        destListId,
+      },
+    );
   };
 
   const addChecklist = (cardId: string, templateName: keyof typeof CHECKLIST_TEMPLATES) => {
