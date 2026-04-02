@@ -859,17 +859,16 @@ export async function createBoardRecord(board: Board) {
   const { error } = await supabase.from('boards').insert(boardToDb(board));
   if (error) throw error;
 
-  await upsertChunks('lists', board.lists.map((list, index) => ({
+  const listRows = board.lists.map((list, index) => ({
     id: list.id,
     board_id: board.id,
     title: list.title,
     position: index,
     created_at: board.createdAt || new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  })), 'id');
-
-  if (!board.cards || Object.keys(board.cards).length === 0) return;
-  await saveBoardSnapshot(board);
+  }));
+  const { error: listError } = await supabase.from('lists').insert(listRows);
+  if (listError) throw listError;
 }
 
 export async function updateBoardMeta(boardId: string, updates: Partial<Board>) {
