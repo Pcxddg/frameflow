@@ -1666,7 +1666,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                         <div>
                           <p className="text-xs font-semibold text-amber-800 mb-1">Modo solo — estas haciendo todo tu</p>
                           <p className="text-[10px] text-amber-700">Llevas las 8 fases. Tip: prioriza idea + guion + publicacion. La edicion es donde mas tiempo se ahorra con un editor.</p>
-                          <p className="text-[10px] text-amber-600 mt-1 font-medium">Activa Editor o Asistente en Ajustes â†’ Workflow.</p>
+                          <p className="text-[10px] text-amber-600 mt-1 font-medium">Activa Editor o Asistente en Ajustes → Workflow.</p>
                         </div>
                       </div>
                     </div>
@@ -1781,10 +1781,10 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                   <p className="text-[11px] text-blue-100 mb-3">4 pilares que se aplican a CADA video. Sin excepcion.</p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { num: '1', label: 'Clic', metric: 'CTR > 4%', icon: 'ðŸŽ¯' },
-                      { num: '2', label: 'Retencion', metric: 'AVD > 50%', icon: 'ðŸ“ˆ' },
-                      { num: '3', label: 'Telarana', metric: 'Interlinking', icon: 'ðŸ•¸' },
-                      { num: '4', label: 'Post-pub', metric: '< 2h accion', icon: 'âš¡' },
+                      { num: '1', label: 'Clic', metric: 'CTR > 4%', icon: '🎯' },
+                      { num: '2', label: 'Retencion', metric: 'AVD > 50%', icon: '📈' },
+                      { num: '3', label: 'Telarana', metric: 'Interlinking', icon: '🕸' },
+                      { num: '4', label: 'Post-pub', metric: '< 2h accion', icon: '⚡' },
                     ].map(p => (
                       <div key={p.num} className="bg-white/15 rounded-lg p-2.5 backdrop-blur-sm">
                         <div className="flex items-center gap-1.5 mb-0.5">
@@ -1983,7 +1983,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     {[
                       { time: '0-30 min', action: 'Responder TODOS los comentarios', detail: 'Cada respuesta = 2x comentarios para el algoritmo. Haz preguntas de vuelta.', color: 'bg-red-500' },
                       { time: '30-60 min', action: 'Compartir en redes + comunidad', detail: 'WhatsApp, Instagram stories, Twitter. Pide a 5 personas que comenten.', color: 'bg-red-400' },
-                      { time: '2 horas', action: 'Revisar CTR en YouTube Studio', detail: 'Si CTR < 4% â†’ protocolo de emergencia (abajo).', color: 'bg-orange-500' },
+                      { time: '2 horas', action: 'Revisar CTR en YouTube Studio', detail: 'Si CTR < 4% → protocolo de emergencia (abajo).', color: 'bg-orange-500' },
                       { time: '24 horas', action: 'Analisis inicial de metricas', detail: 'CTR, AVD, % de suscriptores nuevos. Documentar en tarjeta.', color: 'bg-yellow-500' },
                     ].map((step, i) => (
                       <div key={i} className="flex items-start gap-2">
