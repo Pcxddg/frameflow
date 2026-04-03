@@ -1363,15 +1363,76 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     </div>
 
                     {/* Carpetas Drive */}
-                    <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm font-mono text-sm">
-                      <div className="font-bold text-gray-800 mb-2">[NombreCanal]/</div>
-                      <div className="pl-4 space-y-1 text-gray-600 border-l-2 border-gray-200 ml-2">
-                        {['01_Guiones', '02_Brutos', '03_Proyecto_Editor', '04_Miniaturas', '05_Exports', '06_Recortes_Shorts', '07_Publicados'].map(f => (
-                          <div key={f} className="flex items-center before:content-[''] before:w-4 before:h-px before:bg-gray-300 before:mr-2">{f}</div>
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
+                        <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Estructura de carpetas en Google Drive</p>
+                      </div>
+
+                      {/* Arbol principal */}
+                      <div className="p-4 font-mono text-xs">
+                        <div className="text-blue-700 font-bold mb-2">📁 [NombreCanal]/</div>
+                        {[
+                          { folder: '01_Guiones', color: 'text-blue-600', desc: 'Documentos de texto con el guion completo', icon: '📝', example: '2026/04_Abril/2026-04-15_GTX1050_Mantenimiento.docx' },
+                          { folder: '02_Brutos', color: 'text-orange-600', desc: 'Clips sin editar directamente de camara', icon: '🎥', example: '2026/04_Abril/2026-04-15_GTX1050/ (carpeta con clips)' },
+                          { folder: '03_Proyecto_Editor', color: 'text-purple-600', desc: 'Archivos de proyecto de edicion (Premiere, DaVinci, etc.)', icon: '🎬', example: '2026/04_Abril/2026-04-15_GTX1050.prproj' },
+                          { folder: '04_Miniaturas', color: 'text-pink-600', desc: 'Versiones A, B y C de cada miniatura (.psd y exportadas)', icon: '🖼️', example: '2026/04_Abril/2026-04-15_GTX1050/A.png, B.png, C.png' },
+                          { folder: '05_Exports', color: 'text-green-600', desc: 'Video final listo para subir a YouTube', icon: '✅', example: '2026/04_Abril/2026-04-15_GTX1050_FINAL.mp4' },
+                          { folder: '06_Recortes_Shorts', color: 'text-yellow-600', desc: 'Clips verticales exportados para Shorts/Reels', icon: '📱', example: '2026/04_Abril/2026-04-15_GTX1050_Short1.mp4' },
+                          { folder: '07_Publicados', color: 'text-gray-500', desc: 'Solo un .txt o doc con el link de YouTube publicado', icon: '🔗', example: '2026/04_Abril/2026-04-15_GTX1050_link.txt' },
+                        ].map(({ folder, color, desc, icon, example }) => (
+                          <div key={folder} className="ml-4 mb-3 border-l-2 border-gray-200 pl-3">
+                            <div className={`font-bold ${color}`}>{icon} {folder}/</div>
+                            <div className="ml-4 mt-0.5 space-y-0.5">
+                              <p className="font-sans text-[10px] text-gray-500">{desc}</p>
+                              <div className="border-l-2 border-gray-100 pl-2 mt-1">
+                                <div className="text-gray-400">📅 2026/</div>
+                                <div className="ml-4 text-gray-400">📅 04_Abril/</div>
+                                <div className="ml-8 text-gray-600">{example}</div>
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </div>
-                      <div className="mt-4 pt-3 border-t border-gray-200 text-xs text-gray-500 font-sans">
-                        <p>Formato: <span className="text-gray-800 font-bold font-mono">YYYY-MM-DD_TituloCorto</span></p>
+
+                      {/* Regla de nombre */}
+                      <div className="border-t border-gray-200 bg-blue-50 p-3 space-y-2">
+                        <p className="text-xs font-bold text-blue-800">Regla de nombrado de archivos</p>
+                        <div className="font-mono text-xs bg-white rounded-lg border border-blue-200 px-3 py-2 text-blue-900 font-bold">
+                          YYYY-MM-DD_TituloCorto_Sufijo
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-[10px]">
+                          {[
+                            { part: 'YYYY-MM-DD', desc: 'Fecha de grabacion', ex: '2026-04-15' },
+                            { part: 'TituloCorto', desc: 'Max 4 palabras clave sin espacios', ex: 'GTX1050_Mantenimiento' },
+                            { part: 'Sufijo', desc: 'FINAL / Short1 / v2 / link', ex: '_FINAL.mp4' },
+                          ].map(({ part, desc, ex }) => (
+                            <div key={part} className="bg-white rounded-lg border border-blue-100 p-2">
+                              <p className="font-mono font-bold text-blue-700">{part}</p>
+                              <p className="text-gray-500 mt-0.5">{desc}</p>
+                              <p className="text-gray-400 mt-0.5">Ej: <span className="font-mono text-gray-600">{ex}</span></p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Reglas clave */}
+                      <div className="border-t border-gray-200 p-3">
+                        <p className="text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-wide">Reglas clave</p>
+                        <div className="space-y-1.5">
+                          {[
+                            { icon: '✅', text: 'Cada carpeta principal tiene subcarpetas por año (2026/) y luego por mes (04_Abril/).' },
+                            { icon: '✅', text: 'Usa guion bajo _ en lugar de espacios en todos los nombres.' },
+                            { icon: '✅', text: 'Los brutos se guardan en una subcarpeta con el nombre del video, no sueltos.' },
+                            { icon: '✅', text: 'El export final siempre lleva el sufijo _FINAL para no confundirlo con versiones de review.' },
+                            { icon: '⛔', text: 'No guardes nada en la raiz del canal. Todo va dentro de su carpeta numerada.' },
+                            { icon: '⛔', text: 'No uses nombres como "video_final_finalv2_este_si.mp4". Un solo archivo _FINAL por video.' },
+                          ].map(({ icon, text }, i) => (
+                            <div key={i} className="flex items-start gap-2 text-[10px]">
+                              <span className="shrink-0">{icon}</span>
+                              <span className={icon === '⛔' ? 'text-red-600' : 'text-gray-600'}>{text}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
