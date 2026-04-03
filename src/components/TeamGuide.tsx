@@ -1183,7 +1183,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     return (
                       <div key={pIdx} className="grid grid-cols-8 border-b last:border-b-0" style={{ borderColor: `var(--ff-border)` }}>
                         <div className="p-2 text-[10px] font-bold truncate flex items-center" style={{ color: `var(--ff-text-primary)` }} title={label}>
-                          {label.length > 12 ? label.slice(0, 12) + 'â€¦' : label}
+                          {label.length > 12 ? label.slice(0, 12) + '...' : label}
                         </div>
                         {[1, 2, 3, 4, 5, 6, 0].map(d => {
                           const phaseId = getScheduledPhase(d, pIdx, workflowConfig.cadence);
@@ -1193,7 +1193,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                           const isToday = d === dayOfWeek;
                           return (
                             <div key={d} className={`p-1 flex items-center justify-center ${isToday ? 'bg-blue-50' : ''}`}>
-                              <span className={`text-[8px] font-bold px-1 py-0.5 rounded border leading-none ${leaderColor}`} title={`${phase.label} â€” ${ROLE_LABELS[phase.leader]}`}>
+                              <span className={`text-[8px] font-bold px-1 py-0.5 rounded border leading-none ${leaderColor}`} title={`${phase.label} — ${ROLE_LABELS[phase.leader]}`}>
                                 {phase.shortLabel}
                               </span>
                             </div>
@@ -1246,7 +1246,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                                     <p className="text-[11px] font-semibold" style={{ color: `var(--ff-text-primary)` }}>{p.phase}</p>
                                     {phaseDef && (
                                       <p className="text-[10px]" style={{ color: `var(--ff-text-tertiary)` }}>
-                                        <span className={`font-bold ${ROLE_COLORS[phaseDef.leader as keyof typeof ROLE_COLORS]?.text || ''}`}>{ROLE_LABELS[phaseDef.leader]}</span> lidera Â· {phaseDef.deliverable}
+                                        <span className={`font-bold ${ROLE_COLORS[phaseDef.leader as keyof typeof ROLE_COLORS]?.text || ''}`}>{ROLE_LABELS[phaseDef.leader]}</span> lidera · {phaseDef.deliverable}
                                       </p>
                                     )}
                                   </div>
@@ -1285,7 +1285,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                           </div>
                           <div>
                             <span style={{ color: `var(--ff-text-tertiary)` }}>Apoya: </span>
-                            <span className="font-medium" style={{ color: `var(--ff-text-secondary)` }}>{supporters.length > 0 ? supporters.map(s => ROLE_LABELS[s]).join(', ') : 'â€”'}</span>
+                            <span className="font-medium" style={{ color: `var(--ff-text-secondary)` }}>{supporters.length > 0 ? supporters.map(s => ROLE_LABELS[s]).join(', ') : '—'}</span>
                           </div>
                           <div>
                             <span style={{ color: `var(--ff-text-tertiary)` }}>Done: </span>
@@ -1357,7 +1357,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                       </table>
                       <div className="bg-blue-50 p-3 border-t border-blue-100">
                         <p className="text-xs text-blue-800 font-semibold">
-                          Total estimado por video: 15-30h Â· {workflowConfig.cadence > 1 ? `x${workflowConfig.cadence} videos = ${15 * workflowConfig.cadence}-${30 * workflowConfig.cadence}h/semana` : 'trabajo combinado del equipo'}
+                          Total estimado por video: 15-30h · {workflowConfig.cadence > 1 ? `x${workflowConfig.cadence} videos = ${15 * workflowConfig.cadence}-${30 * workflowConfig.cadence}h/semana` : 'trabajo combinado del equipo'}
                         </p>
                       </div>
                     </div>
@@ -1365,71 +1365,142 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     {/* Carpetas Drive */}
                     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                       <div className="bg-gray-50 px-4 py-2.5 border-b border-gray-200">
-                        <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Estructura de carpetas en Google Drive</p>
+                        <p className="text-xs font-bold text-gray-700 uppercase tracking-wide">Estructura de carpetas — Google Drive</p>
                       </div>
 
-                      {/* Arbol principal */}
-                      <div className="p-4 font-mono text-xs">
-                        <div className="text-blue-700 font-bold mb-2">📁 [NombreCanal]/</div>
+                      {/* Arbol completo */}
+                      <div className="p-4 font-mono text-[11px] leading-5 overflow-x-auto">
+                        <div className="text-blue-700 font-bold">[NombreCanal]/</div>
                         {[
-                          { folder: '01_Guiones', color: 'text-blue-600', desc: 'Documentos de texto con el guion completo', icon: '📝', example: '2026/04_Abril/2026-04-15_GTX1050_Mantenimiento.docx' },
-                          { folder: '02_Brutos', color: 'text-orange-600', desc: 'Clips sin editar directamente de camara', icon: '🎥', example: '2026/04_Abril/2026-04-15_GTX1050/ (carpeta con clips)' },
-                          { folder: '03_Proyecto_Editor', color: 'text-purple-600', desc: 'Archivos de proyecto de edicion (Premiere, DaVinci, etc.)', icon: '🎬', example: '2026/04_Abril/2026-04-15_GTX1050.prproj' },
-                          { folder: '04_Miniaturas', color: 'text-pink-600', desc: 'Versiones A, B y C de cada miniatura (.psd y exportadas)', icon: '🖼️', example: '2026/04_Abril/2026-04-15_GTX1050/A.png, B.png, C.png' },
-                          { folder: '05_Exports', color: 'text-green-600', desc: 'Video final listo para subir a YouTube', icon: '✅', example: '2026/04_Abril/2026-04-15_GTX1050_FINAL.mp4' },
-                          { folder: '06_Recortes_Shorts', color: 'text-yellow-600', desc: 'Clips verticales exportados para Shorts/Reels', icon: '📱', example: '2026/04_Abril/2026-04-15_GTX1050_Short1.mp4' },
-                          { folder: '07_Publicados', color: 'text-gray-500', desc: 'Solo un .txt o doc con el link de YouTube publicado', icon: '🔗', example: '2026/04_Abril/2026-04-15_GTX1050_link.txt' },
-                        ].map(({ folder, color, desc, icon, example }) => (
-                          <div key={folder} className="ml-4 mb-3 border-l-2 border-gray-200 pl-3">
-                            <div className={`font-bold ${color}`}>{icon} {folder}/</div>
-                            <div className="ml-4 mt-0.5 space-y-0.5">
-                              <p className="font-sans text-[10px] text-gray-500">{desc}</p>
-                              <div className="border-l-2 border-gray-100 pl-2 mt-1">
-                                <div className="text-gray-400">📅 2026/</div>
-                                <div className="ml-4 text-gray-400">📅 04_Abril/</div>
-                                <div className="ml-8 text-gray-600">{example}</div>
-                              </div>
+                          {
+                            folder: '01_Guiones/',
+                            color: 'text-blue-700',
+                            desc: 'Guion escrito de cada video',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        └── 2026-04-15_GTX1050_Mantenimiento.docx', c: 'text-gray-600' },
+                            ],
+                          },
+                          {
+                            folder: '02_Brutos/',
+                            color: 'text-orange-700',
+                            desc: 'Clips sin editar de camara — cada video en su subcarpeta',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        └── 2026-04-15_GTX1050_Mantenimiento/', c: 'text-gray-500' },
+                              { t: '            ├── clip_001.mp4', c: 'text-gray-600' },
+                              { t: '            ├── clip_002.mp4', c: 'text-gray-600' },
+                              { t: '            └── clip_003.mp4', c: 'text-gray-600' },
+                            ],
+                          },
+                          {
+                            folder: '03_Proyecto_Editor/',
+                            color: 'text-purple-700',
+                            desc: 'Archivo de proyecto de edicion (Premiere .prproj, DaVinci .drp, etc.)',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        └── 2026-04-15_GTX1050_Mantenimiento.prproj', c: 'text-gray-600' },
+                            ],
+                          },
+                          {
+                            folder: '04_Miniaturas/',
+                            color: 'text-pink-700',
+                            desc: 'Versiones A, B y C — archivos fuente (.psd) y exports (.png)',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        └── 2026-04-15_GTX1050_Mantenimiento/', c: 'text-gray-500' },
+                              { t: '            ├── A_principal.png', c: 'text-gray-600' },
+                              { t: '            ├── B_backup.png', c: 'text-gray-600' },
+                              { t: '            ├── C_backup.png', c: 'text-gray-600' },
+                              { t: '            └── fuente.psd', c: 'text-gray-600' },
+                            ],
+                          },
+                          {
+                            folder: '05_Exports/',
+                            color: 'text-green-700',
+                            desc: 'Video final listo para subir — siempre con sufijo _FINAL',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        └── 2026-04-15_GTX1050_Mantenimiento_FINAL.mp4', c: 'text-gray-600' },
+                            ],
+                          },
+                          {
+                            folder: '06_Recortes_Shorts/',
+                            color: 'text-yellow-700',
+                            desc: 'Clips verticales para Shorts/Reels — numerados si hay varios',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        ├── 2026-04-15_GTX1050_Short1.mp4', c: 'text-gray-600' },
+                              { t: '        └── 2026-04-15_GTX1050_Short2.mp4', c: 'text-gray-600' },
+                            ],
+                          },
+                          {
+                            folder: '07_Publicados/',
+                            color: 'text-gray-500',
+                            desc: 'Solo un .txt con el link de YouTube una vez publicado',
+                            lines: [
+                              { t: '└── 2026/', c: 'text-gray-400' },
+                              { t: '    └── 04_Abril/', c: 'text-gray-400' },
+                              { t: '        └── 2026-04-15_GTX1050_Mantenimiento_link.txt', c: 'text-gray-600' },
+                            ],
+                          },
+                        ].map(({ folder, color, desc, lines }, fi, arr) => (
+                          <div key={folder} className="mt-1">
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-gray-300">{fi < arr.length - 1 ? '├──' : '└──'}</span>
+                              <span className={`font-bold ${color}`}>{folder}</span>
+                              <span className="font-sans text-[9px] text-gray-400 ml-1">{desc}</span>
                             </div>
+                            {lines.map((l, li) => (
+                              <div key={li} className={`ml-6 ${l.c}`}>{l.t}</div>
+                            ))}
                           </div>
                         ))}
                       </div>
 
-                      {/* Regla de nombre */}
-                      <div className="border-t border-gray-200 bg-blue-50 p-3 space-y-2">
-                        <p className="text-xs font-bold text-blue-800">Regla de nombrado de archivos</p>
+                      {/* Regla de naming */}
+                      <div className="border-t border-gray-200 bg-blue-50 px-4 py-3 space-y-2">
+                        <p className="text-xs font-bold text-blue-800">Convencion de nombres</p>
                         <div className="font-mono text-xs bg-white rounded-lg border border-blue-200 px-3 py-2 text-blue-900 font-bold">
-                          YYYY-MM-DD_TituloCorto_Sufijo
+                          YYYY-MM-DD_TituloCorto_Sufijo.ext
                         </div>
                         <div className="grid grid-cols-3 gap-2 text-[10px]">
                           {[
                             { part: 'YYYY-MM-DD', desc: 'Fecha de grabacion', ex: '2026-04-15' },
-                            { part: 'TituloCorto', desc: 'Max 4 palabras clave sin espacios', ex: 'GTX1050_Mantenimiento' },
-                            { part: 'Sufijo', desc: 'FINAL / Short1 / v2 / link', ex: '_FINAL.mp4' },
+                            { part: 'TituloCorto', desc: 'Max 4 palabras, sin espacios', ex: 'GTX1050_Mantenimiento' },
+                            { part: 'Sufijo', desc: 'FINAL · Short1 · v2 · link', ex: '_FINAL.mp4' },
                           ].map(({ part, desc, ex }) => (
                             <div key={part} className="bg-white rounded-lg border border-blue-100 p-2">
-                              <p className="font-mono font-bold text-blue-700">{part}</p>
-                              <p className="text-gray-500 mt-0.5">{desc}</p>
-                              <p className="text-gray-400 mt-0.5">Ej: <span className="font-mono text-gray-600">{ex}</span></p>
+                              <p className="font-mono font-bold text-blue-700 text-[10px]">{part}</p>
+                              <p className="text-gray-500 mt-0.5 font-sans">{desc}</p>
+                              <p className="text-gray-400 mt-0.5 font-sans">Ej: <span className="font-mono text-gray-600">{ex}</span></p>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Reglas clave */}
-                      <div className="border-t border-gray-200 p-3">
+                      {/* Reglas */}
+                      <div className="border-t border-gray-200 px-4 py-3">
                         <p className="text-[10px] font-bold text-gray-600 mb-2 uppercase tracking-wide">Reglas clave</p>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 text-[10px]">
                           {[
-                            { icon: '✅', text: 'Cada carpeta principal tiene subcarpetas por año (2026/) y luego por mes (04_Abril/).' },
-                            { icon: '✅', text: 'Usa guion bajo _ en lugar de espacios en todos los nombres.' },
-                            { icon: '✅', text: 'Los brutos se guardan en una subcarpeta con el nombre del video, no sueltos.' },
-                            { icon: '✅', text: 'El export final siempre lleva el sufijo _FINAL para no confundirlo con versiones de review.' },
-                            { icon: '⛔', text: 'No guardes nada en la raiz del canal. Todo va dentro de su carpeta numerada.' },
-                            { icon: '⛔', text: 'No uses nombres como "video_final_finalv2_este_si.mp4". Un solo archivo _FINAL por video.' },
-                          ].map(({ icon, text }, i) => (
-                            <div key={i} className="flex items-start gap-2 text-[10px]">
-                              <span className="shrink-0">{icon}</span>
-                              <span className={icon === '⛔' ? 'text-red-600' : 'text-gray-600'}>{text}</span>
+                            { ok: true,  text: 'Dentro de cada carpeta numerada, crear subcarpeta por ano (2026/) y luego por mes (04_Abril/).' },
+                            { ok: true,  text: 'Los brutos van en su propia subcarpeta con el nombre del video, nunca sueltos.' },
+                            { ok: true,  text: 'El export siempre lleva _FINAL para distinguirlo de versiones de revision.' },
+                            { ok: true,  text: 'Prepara siempre 3 miniaturas (A, B, C) antes de publicar — guarda las 3.' },
+                            { ok: false, text: 'No guardes archivos en la raiz del canal. Todo dentro de su carpeta numerada.' },
+                            { ok: false, text: 'No uses espacios ni acentos en nombres de archivo.' },
+                            { ok: false, text: 'No llames al archivo "video_final_v2_este_si.mp4". Un unico _FINAL por video.' },
+                          ].map(({ ok, text }, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <span className={`shrink-0 font-bold ${ok ? 'text-green-600' : 'text-red-500'}`}>{ok ? '[OK]' : '[NO]'}</span>
+                              <span className={ok ? 'text-gray-600' : 'text-red-600'}>{text}</span>
                             </div>
                           ))}
                         </div>
@@ -1518,7 +1589,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                       <div className="bg-orange-500 px-4 py-2 flex items-center justify-between">
                         <h4 className="font-bold text-white flex items-center gap-2"><Clapperboard size={14} /> Editor</h4>
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-orange-400/30 text-white">
-                          {workflowConfig.editorLevel === 'full' ? 'Completo' : 'Basico'} â€” Lidera {Object.values(PHASE_MATRIX).filter(p => p.leader === 'editor').length} fase{Object.values(PHASE_MATRIX).filter(p => p.leader === 'editor').length > 1 ? 's' : ''}
+                          {workflowConfig.editorLevel === 'full' ? 'Completo' : 'Basico'} — Lidera {Object.values(PHASE_MATRIX).filter(p => p.leader === 'editor').length} fase{Object.values(PHASE_MATRIX).filter(p => p.leader === 'editor').length > 1 ? 's' : ''}
                         </span>
                       </div>
                       <div className="p-4">
@@ -1545,9 +1616,9 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                             <div className="border-t border-gray-100 pt-2 mt-1">
                               <p className="text-[10px] font-semibold text-gray-500 mb-1">Extras (nivel completo):</p>
                               <ul className="text-[10px] text-gray-500 space-y-0.5">
-                                <li>â€¢ Proponer estructura y cortes creativos</li>
-                                <li>â€¢ Editar Shorts de forma independiente</li>
-                                <li>â€¢ Gestionar archivos en Drive</li>
+                                <li>•Proponer estructura y cortes creativos</li>
+                                <li>•Editar Shorts de forma independiente</li>
+                                <li>•Gestionar archivos en Drive</li>
                               </ul>
                             </div>
                           )}
@@ -1593,7 +1664,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                       <div className="flex items-start gap-2">
                         <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-semibold text-amber-800 mb-1">Modo solo â€” estas haciendo todo tu</p>
+                          <p className="text-xs font-semibold text-amber-800 mb-1">Modo solo — estas haciendo todo tu</p>
                           <p className="text-[10px] text-amber-700">Llevas las 8 fases. Tip: prioriza idea + guion + publicacion. La edicion es donde mas tiempo se ahorra con un editor.</p>
                           <p className="text-[10px] text-amber-600 mt-1 font-medium">Activa Editor o Asistente en Ajustes â†’ Workflow.</p>
                         </div>
@@ -1614,7 +1685,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     {[
                       { step: 1, from: 'Creador', to: 'Editor', trigger: 'Mover tarjeta a "Edicion"', what: 'Brutos en Drive + link en tarjeta + guion listo + gancho definido', rule: 'Sin brutos = sin edicion. No avises sin subir.', fromColor: 'bg-blue-500', toColor: 'bg-orange-500' },
                       { step: 2, from: 'Editor', to: 'Creador', trigger: 'Primer corte listo', what: 'Video exportado en Drive + 3 miniaturas + notificacion WhatsApp', rule: 'Notificar al entregar. No esperes a que pregunte.', fromColor: 'bg-orange-500', toColor: 'bg-blue-500' },
-                      { step: 3, from: 'Creador', to: 'Editor', trigger: 'Feedback con timecodes', what: '"En 2:30 cortar pausa, en 5:10 agregar B-roll" â€” NO "mejorar el ritmo"', rule: 'Feedback especifico = cambios rapidos. Vago = rondas extra.', fromColor: 'bg-blue-500', toColor: 'bg-orange-500' },
+                      { step: 3, from: 'Creador', to: 'Editor', trigger: 'Feedback con timecodes', what: '“En 2:30 cortar pausa, en 5:10 agregar B-roll” — NO “mejorar el ritmo”', rule: 'Feedback especifico = cambios rapidos. Vago = rondas extra.', fromColor: 'bg-blue-500', toColor: 'bg-orange-500' },
                       { step: 4, from: 'Editor', to: 'Creador', trigger: 'Export final aprobado', what: 'Video final en 05_Exports + mover tarjeta a "Publicacion"', rule: 'Maximo 2 rondas de cambios. Si no, replantear guion.', fromColor: 'bg-orange-500', toColor: 'bg-blue-500' },
                     ].map((h) => (
                       <div key={h.step} className={`p-3 flex items-start gap-3 ${h.step > 1 ? 'border-t border-gray-100' : ''}`}>
@@ -1735,7 +1806,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                 </div>
                 <div className="grid gap-2">
                   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
-                    <h4 className="text-xs font-bold text-gray-800 mb-2">Oceano Azul â€” Encontrar tu angulo</h4>
+                    <h4 className="text-xs font-bold text-gray-800 mb-2">Oceano Azul — Encontrar tu angulo</h4>
                     <div className="text-[10px] text-gray-600 space-y-1">
                       <p>Cruza 2 nichos para eliminar competencia. No seas "otro canal de cocina".</p>
                       <div className="bg-blue-50 rounded p-2 mt-1">
@@ -1746,7 +1817,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
-                    <h4 className="text-xs font-bold text-gray-800 mb-2">Metodo Linden â€” Titulos que venden</h4>
+                    <h4 className="text-xs font-bold text-gray-800 mb-2">Metodo Linden — Titulos que venden</h4>
                     <div className="text-[10px] text-gray-600 space-y-1">
                       <p><strong>Regla:</strong> Escribe 10-50 variaciones ANTES de elegir. Nunca te quedes con el primero.</p>
                       <div className="grid grid-cols-2 gap-1 mt-1">
@@ -1762,7 +1833,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
-                    <h4 className="text-xs font-bold text-gray-800 mb-2">Miniatura â€” 3 Elementos obligatorios</h4>
+                    <h4 className="text-xs font-bold text-gray-800 mb-2">Miniatura — 3 Elementos obligatorios</h4>
                     <div className="text-[10px] text-gray-600">
                       <div className="flex gap-2">
                         <div className="flex-1 bg-gray-50 rounded p-2 text-center">
@@ -1798,16 +1869,16 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                       <div className="bg-purple-50 rounded p-2 mt-1">
                         <p className="font-semibold text-purple-700 mb-1">Formulas que funcionan:</p>
                         <ul className="space-y-0.5 text-purple-600">
-                          <li>â€¢ <strong>Resultado primero:</strong> "Perdi 20 kg en 6 meses. Asi lo hice."</li>
-                          <li>â€¢ <strong>Pregunta provocadora:</strong> "Te han mentido sobre las proteinas."</li>
-                          <li>â€¢ <strong>Situacion extrema:</strong> "Esto casi destruye mi canal."</li>
-                          <li>â€¢ <strong>Curiosity gap:</strong> "Hay un truco que el 99% no conoce."</li>
+                          <li>•<strong>Resultado primero:</strong> "Perdi 20 kg en 6 meses. Asi lo hice."</li>
+                          <li>•<strong>Pregunta provocadora:</strong> "Te han mentido sobre las proteinas."</li>
+                          <li>•<strong>Situacion extrema:</strong> "Esto casi destruye mi canal."</li>
+                          <li>•<strong>Curiosity gap:</strong> "Hay un truco que el 99% no conoce."</li>
                         </ul>
                       </div>
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm border-l-4 border-l-purple-500">
-                    <h4 className="text-xs font-bold text-gray-800 mb-2">Storytelling â€” Regla South Park</h4>
+                    <h4 className="text-xs font-bold text-gray-800 mb-2">Storytelling — Regla South Park</h4>
                     <div className="text-[10px] text-gray-600">
                       <p className="mb-2">Cada escena se conecta con "PERO" o "POR LO TANTO", nunca con "Y DESPUES".</p>
                       <div className="bg-gray-50 rounded p-2 space-y-1.5">
@@ -1827,7 +1898,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm border-l-4 border-l-purple-500">
-                    <h4 className="text-xs font-bold text-gray-800 mb-2">Edicion â€” Estimulo cada 10 segundos</h4>
+                    <h4 className="text-xs font-bold text-gray-800 mb-2">Edicion — Estimulo cada 10 segundos</h4>
                     <div className="text-[10px] text-gray-600">
                       <p className="mb-1">El cerebro necesita cambios constantes para no irse. Cada 10s uno de estos:</p>
                       <div className="grid grid-cols-3 gap-1 mt-1">
@@ -1854,10 +1925,10 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                       <div className="bg-emerald-50 rounded p-2">
                         <p className="font-semibold text-emerald-700 mb-1">Donde encontrar keywords:</p>
                         <ul className="text-emerald-600 space-y-0.5">
-                          <li>â€¢ Autocompletado de YouTube (escribe y mira sugerencias)</li>
-                          <li>â€¢ Seccion "Otros buscaron" debajo de videos</li>
-                          <li>â€¢ Google Trends (comparar terminos)</li>
-                          <li>â€¢ Comentarios de videos populares del nicho</li>
+                          <li>•Autocompletado de YouTube (escribe y mira sugerencias)</li>
+                          <li>•Seccion "Otros buscaron" debajo de videos</li>
+                          <li>•Google Trends (comparar terminos)</li>
+                          <li>•Comentarios de videos populares del nicho</li>
                         </ul>
                       </div>
                       <div className="bg-gray-50 rounded p-2">
@@ -1874,7 +1945,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                     </div>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm border-l-4 border-l-emerald-500">
-                    <h4 className="text-xs font-bold text-gray-800 mb-2">Interlinking â€” Tu red interna</h4>
+                    <h4 className="text-xs font-bold text-gray-800 mb-2">Interlinking — Tu red interna</h4>
                     <div className="text-[10px] text-gray-600 space-y-1">
                       <p>Cada video nuevo conecta con al menos 2 videos existentes. Objetivo: que el viewer nunca salga de tu canal.</p>
                       <div className="grid grid-cols-2 gap-1 mt-1">
@@ -1937,7 +2008,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                   <p className="text-xs font-bold text-red-800 mb-3">Si CTR &lt; 4% a las 2 horas de publicar:</p>
                   <div className="space-y-2.5">
                     {[
-                      { step: 1, action: 'Cambiar miniatura', detail: 'Usa backup #1. NO la hagas desde cero â€” ya deberias tener 3.', timing: 'Inmediato' },
+                      { step: 1, action: 'Cambiar miniatura', detail: 'Usa backup #1. NO la hagas desde cero — ya deberias tener 3.', timing: 'Inmediato' },
                       { step: 2, action: 'Esperar 1 hora', detail: 'Dale tiempo al algoritmo de re-evaluar con la nueva miniatura.', timing: '+1h' },
                       { step: 3, action: 'Si sigue bajo: cambiar titulo', detail: 'Usa variacion pre-escrita del Metodo Linden.', timing: '+1h' },
                       { step: 4, action: 'Registrar en tarjeta', detail: 'Documentar que se cambio y a que hora. Esto es data para el futuro.', timing: 'Siempre' },
@@ -2014,11 +2085,11 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
               <section>
                 <div className="flex items-center space-x-2 mb-3" style={{ color: `var(--ff-text-primary)` }}>
                   <DollarSign size={18} className="text-green-600" />
-                  <h3 className="font-semibold text-lg">Monetizacion â€” 4 Fuentes</h3>
+                  <h3 className="font-semibold text-lg">Monetizacion — 4 Fuentes</h3>
                 </div>
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                   {[
-                    { source: 'AdSense', level: 'Base', desc: 'Ingresos pasivos por views. Nichos alto CPM: finanzas, tech, salud, legal.', tip: 'Optimiza AVD â€” mas tiempo = mas ads = mas revenue.', color: 'border-l-green-400', multiplier: '1x' },
+                    { source: 'AdSense', level: 'Base', desc: 'Ingresos pasivos por views. Nichos alto CPM: finanzas, tech, salud, legal.', tip: 'Optimiza AVD — mas tiempo = mas ads = mas revenue.', color: 'border-l-green-400', multiplier: '1x' },
                     { source: 'Afiliados', level: 'Medio', desc: 'Links en descripcion a productos que recomiendas. Amazon, software, cursos.', tip: 'Menciona el producto naturalmente en el video + pin en comentarios.', color: 'border-l-green-500', multiplier: '2-10x' },
                     { source: 'Sponsors', level: 'Alto', desc: 'Marcas te pagan por mencion. Cobra por CPM de tu canal, no tarifa fija.', tip: 'Espera a tener 10K+ subs. Usa media kit con datos reales.', color: 'border-l-green-600', multiplier: '10-50x' },
                     { source: 'Producto propio', level: 'Maximo', desc: 'Curso, ebook, consultoria, merch. Mayor margen, control total.', tip: 'Valida con un "lead magnet" gratis antes de crear producto.', color: 'border-l-green-700', multiplier: '50-100x' },
