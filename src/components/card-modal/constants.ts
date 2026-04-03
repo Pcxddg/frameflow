@@ -25,20 +25,20 @@ export const PANEL_CONFIG: Record<PanelId, { kicker: string; title: string; desc
 export const DESC_PRESETS: Record<string, string> = {
   'SEO Completa': `[Parrafo de apertura: resume el video en 2-3 lineas con la keyword principal]
 
-ðŸ”— RECURSOS MENCIONADOS
+🔗 RECURSOS MENCIONADOS
 -
 
-â±ï¸ TIMESTAMPS
+⏱️ TIMESTAMPS
 00:00 - Intro
 00:00 -
 
-ðŸ“Œ SOBRE ESTE VIDEO
+📌 SOBRE ESTE VIDEO
 [Descripcion expandida con keywords secundarias. 2-3 parrafos con valor para el espectador.]
 
-ðŸ” TAGS / KEYWORDS
+🔍 TAGS / KEYWORDS
 [keyword1, keyword2, keyword3]
 
-ðŸ“² REDES SOCIALES
+📲 REDES SOCIALES
 - Instagram:
 - Twitter/X:
 - TikTok:
@@ -47,17 +47,17 @@ export const DESC_PRESETS: Record<string, string> = {
 
   'Minimalista': `[Descripcion corta y directa del video]
 
-ðŸ”— Links:
+🔗 Links:
 -
 
-ðŸ“² Sigueme:
+📲 Sigueme:
 -
 
 #hashtag1 #hashtag2`,
 
   'Short': `[1-2 lineas describiendo el short]
 
-ðŸ“º Video completo:
+📺 Video completo:
 
 #shorts #hashtag1 #hashtag2`,
 };

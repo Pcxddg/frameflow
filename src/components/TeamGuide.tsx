@@ -1227,7 +1227,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                       <div key={d} className={`rounded-lg border overflow-hidden ${isToday ? 'border-blue-400 ring-2 ring-blue-200' : ''}`} style={{ borderColor: isToday ? undefined : `var(--ff-border)`, background: `var(--ff-surface-solid)` }}>
                         <div className={`flex items-center justify-between px-3 py-2 ${isToday ? 'bg-blue-600 text-white' : ''}`} style={!isToday ? { background: `var(--ff-bg-subtle)` } : {}}>
                           <span className={`text-xs font-bold ${isToday ? 'text-white' : ''}`} style={!isToday ? { color: `var(--ff-text-primary)` } : {}}>
-                            {DAY_NAMES[d]} {isToday && 'â† HOY'}
+                            {DAY_NAMES[d]} {isToday && '← HOY'}
                           </span>
                           <span className={`text-[10px] font-semibold ${isToday ? 'text-blue-200' : ''}`} style={!isToday ? { color: `var(--ff-text-tertiary)` } : {}}>
                             {plan.focus || 'Descanso'}
@@ -1637,7 +1637,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                         </span>
                       </div>
                       <div className="p-4">
-                        <p className="text-xs text-gray-500 mb-3 font-medium">Investigacion, diseÃ±o, redes, metadata, monitoreo</p>
+                        <p className="text-xs text-gray-500 mb-3 font-medium">Investigacion, diseño, redes, metadata, monitoreo</p>
                         <div className="space-y-2">
                           {Object.values(PHASE_MATRIX).filter(p => p.supporter.includes('asistente')).map(phase => (
                             <div key={phase.id} className="flex items-start gap-2">
@@ -1646,7 +1646,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                                 {phase.id === 'idea' && 'Investigacion de keywords, tendencias y competencia'}
                                 {phase.id === 'titulos' && 'Analisis de titulos en el nicho, proponer variaciones'}
                                 {phase.id === 'grabacion' && 'Preparar setup, organizar brutos en Drive'}
-                                {phase.id === 'edicion' && 'DiseÃ±o de 3 miniaturas (rostro + texto + contexto)'}
+                                {phase.id === 'edicion' && 'Diseño de 3 miniaturas (rostro + texto + contexto)'}
                                 {phase.id === 'publicacion' && 'Metadata YouTube, descripcion SEO, responder comentarios'}
                                 {phase.id === 'metricas' && 'Reporte semanal: CTR, AVD, suscriptores, revenue'}
                                 {phase.id === 'review' && 'Coordinar feedback entre creador y editor'}

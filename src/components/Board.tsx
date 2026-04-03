@@ -636,7 +636,7 @@ export function Board({
             </p>
             <h2 className="text-base font-bold mt-1 truncate" style={{ color: `var(--ff-text-primary)` }}>{activeList?.title}</h2>
             <p className="text-[11px] mt-1" style={{ color: `var(--ff-text-secondary)` }}>
-              {activeListIndex + 1} de {board.lists.length} Â· {visibleCount} visible{visibleCount === 1 ? '' : 's'}
+              {activeListIndex + 1} de {board.lists.length} · {visibleCount} visible{visibleCount === 1 ? '' : 's'}
             </p>
           </div>
 
