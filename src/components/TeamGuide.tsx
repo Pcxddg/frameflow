@@ -93,9 +93,9 @@ function areActiveVideoIdsEqual(a: string[], b: string[]): boolean {
 // â”€â”€â”€ Role colors â”€â”€â”€
 
 const ROLE_COLORS = {
-  creador: { bg: 'bg-blue-100', bgLight: 'bg-blue-50/50', border: '#bfdbfe', text: 'text-blue-700', accent: 'bg-blue-500', check: 'text-blue-500', badge: 'bg-blue-600' },
-  editor: { bg: 'bg-orange-100', bgLight: 'bg-orange-50/50', border: '#fed7aa', text: 'text-orange-700', accent: 'bg-orange-500', check: 'text-orange-500', badge: 'bg-orange-500' },
-  asistente: { bg: 'bg-emerald-100', bgLight: 'bg-emerald-50/50', border: '#a7f3d0', text: 'text-emerald-700', accent: 'bg-emerald-500', check: 'text-emerald-500', badge: 'bg-emerald-500' },
+  creador: { bg: 'bg-[color-mix(in_srgb,var(--ff-primary)_14%,var(--ff-surface-solid))]', bgLight: 'bg-[color-mix(in_srgb,var(--ff-primary)_7%,var(--ff-bg))]', border: 'color-mix(in srgb, var(--ff-primary) 35%, transparent)', text: 'text-[var(--ff-primary-dark)]', accent: 'bg-[var(--ff-primary)]', check: 'text-[var(--ff-primary)]', badge: 'bg-[var(--ff-primary)]' },
+  editor: { bg: 'bg-[color-mix(in_srgb,var(--ff-warning-text)_14%,var(--ff-surface-solid))]', bgLight: 'bg-[color-mix(in_srgb,var(--ff-warning-text)_7%,var(--ff-bg))]', border: 'color-mix(in srgb, var(--ff-warning-text) 35%, transparent)', text: 'text-[var(--ff-warning-text)]', accent: 'bg-[var(--ff-warning-text)]', check: 'text-[var(--ff-warning-text)]', badge: 'bg-[var(--ff-warning-text)]' },
+  asistente: { bg: 'bg-[color-mix(in_srgb,var(--ff-success-text)_14%,var(--ff-surface-solid))]', bgLight: 'bg-[color-mix(in_srgb,var(--ff-success-text)_7%,var(--ff-bg))]', border: 'color-mix(in srgb, var(--ff-success-text) 35%, transparent)', text: 'text-[var(--ff-success-text)]', accent: 'bg-[var(--ff-success-text)]', check: 'text-[var(--ff-success-text)]', badge: 'bg-[var(--ff-success-text)]' },
 };
 
 const ROLE_LABELS: Record<string, string> = { creador: 'Creador', editor: 'Editor', asistente: 'Asistente' };
@@ -664,7 +664,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
         <button
           onClick={() => { setAddingTaskRole(role); setNewTaskText(''); setNewTaskDetail(''); }}
           className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 border-dashed text-[11px] font-semibold transition-all hover:scale-[1.01]"
-          style={{ borderColor: color.border, color: color.text.replace('text-', '').includes('blue') ? '#3b82f6' : color.text.includes('orange') ? '#f97316' : '#10b981' }}
+          style={{ borderColor: color.border, color: 'var(--ff-primary)' }}
         >
           <Plus size={13} />
           Agregar tarea
@@ -1106,7 +1106,7 @@ export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpe
                                   <button
                                     onClick={() => handleTaskStageAction(task.cardId, task.stageId, task.status === 'done' ? 'pending' : 'done')}
                                     className="min-h-9 rounded-xl px-3 py-2 text-[11px] font-semibold text-white"
-                                    style={{ background: task.status === 'done' ? '#64748b' : '#2563eb' }}
+                                    style={{ background: task.status === 'done' ? 'var(--ff-text-tertiary)' : 'var(--ff-primary)' }}
                                   >
                                     {task.status === 'done'
                                       ? 'Reabrir'

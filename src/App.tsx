@@ -1070,7 +1070,7 @@ function AppContent() {
                   <span
                     key={member.emailLowercase}
                     className="relative flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-black text-white shadow-sm"
-                    style={{ background: `linear-gradient(135deg, #2563eb, #4f46e5)` }}
+                    style={{ background: `var(--ff-primary)` }}
                     title={member.displayName || member.emailLowercase}
                   >
                     {member.photoURL ? (

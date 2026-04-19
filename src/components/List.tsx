@@ -148,7 +148,7 @@ export function List({
       style={{
         background: `var(--ff-column-bg)`,
         border: isActiveDesktop ? `1px solid color-mix(in srgb, var(--ff-primary) 28%, var(--ff-column-border))` : `1px solid var(--ff-column-border)`,
-        boxShadow: isActiveDesktop ? '0 18px 44px -34px rgba(37, 99, 235, 0.42)' : `var(--ff-shadow-sm)`,
+        boxShadow: isActiveDesktop ? `var(--ff-shadow-md)` : `var(--ff-shadow-sm)`,
       }}
     >
       <div className={`${desktopColumnHeaderPadding} border-b font-semibold`} style={{ color: `var(--ff-text-secondary)`, borderColor: `var(--ff-border)` }}>

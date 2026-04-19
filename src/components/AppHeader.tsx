@@ -47,10 +47,10 @@ const shellActiveStyle = {
 };
 
 const primaryActionStyle = {
-  background: 'linear-gradient(135deg, var(--ff-primary), color-mix(in srgb, var(--ff-primary) 68%, #1d4ed8))',
-  border: '1px solid color-mix(in srgb, var(--ff-primary) 62%, rgba(255,255,255,0.28))',
-  boxShadow: '0 18px 30px -22px color-mix(in srgb, var(--ff-primary) 55%, transparent)',
-  color: 'var(--ff-text-inverse)',
+  background: 'var(--ff-primary)',
+  border: '1px solid var(--ff-primary-dark)',
+  boxShadow: 'var(--ff-shadow-sm)',
+  color: '#ffffff',
 };
 
 const mutedTextStyle = {
@@ -125,12 +125,11 @@ function DesktopHeader({
 
   return (
     <header
-      className="relative z-50 shrink-0 px-4 py-2.5 flex items-center gap-4 backdrop-blur-xl"
+      className="relative z-50 shrink-0 px-4 py-2.5 flex items-center gap-4"
       style={{
-        background: 'linear-gradient(to right, var(--ff-header-from), var(--ff-header-via), var(--ff-header-to))',
+        background: 'var(--ff-header-from)',
         color: 'var(--ff-header-text)',
         borderBottom: '1px solid var(--ff-header-border)',
-        boxShadow: '0 22px 44px -30px rgba(0,0,0,0.72)',
       }}
     >
       {/* ── ZONA IZQUIERDA: Logo + Canal ── */}
@@ -177,8 +176,11 @@ function DesktopHeader({
                         style={{ background: isActive ? 'color-mix(in srgb, var(--ff-primary) 10%, transparent)' : 'transparent' }}
                       >
                         <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${isActive ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm' : 'text-gray-500'}`}
-                          style={!isActive ? { background: 'var(--ff-input-bg)', color: 'var(--ff-text-tertiary)' } : {}}
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                          style={isActive
+                            ? { background: 'var(--ff-primary)', color: '#ffffff' }
+                            : { background: 'var(--ff-input-bg)', color: 'var(--ff-text-tertiary)' }
+                          }
                         >
                           {item.title.charAt(0).toUpperCase()}
                         </div>
@@ -190,7 +192,7 @@ function DesktopHeader({
                             {cardCount} {cardCount === 1 ? 'video' : 'videos'} · {item.members?.length || 1} {(item.members?.length || 1) === 1 ? 'miembro' : 'miembros'}
                           </p>
                         </div>
-                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />}
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--ff-primary)' }} />}
                       </button>
                     );
                   })}
@@ -272,8 +274,8 @@ function DesktopHeader({
           >
             {/* Avatar */}
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden text-xs font-bold text-white"
-              style={{ background: 'rgba(59, 130, 246, 0.28)', border: '1px solid rgba(255,255,255,0.18)' }}
+              className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden text-xs font-bold"
+              style={{ background: 'color-mix(in srgb, var(--ff-primary) 18%, var(--ff-surface-solid))', border: '1px solid var(--ff-border)', color: 'var(--ff-primary)' }}
             >
               {user.photoURL ? (
                 <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
@@ -378,11 +380,10 @@ function MobileHeader({
     <header
       className="shrink-0 px-4 pb-3"
       style={{
-        background: 'linear-gradient(to right, var(--ff-header-from), var(--ff-header-via), var(--ff-header-to))',
+        background: 'var(--ff-header-from)',
         color: 'var(--ff-header-text)',
         borderBottom: '1px solid var(--ff-header-border)',
         paddingTop: 'calc(0.9rem + env(safe-area-inset-top))',
-        boxShadow: '0 20px 40px -30px rgba(0,0,0,0.72)',
       }}
     >
       <div className="flex items-center justify-between gap-3">

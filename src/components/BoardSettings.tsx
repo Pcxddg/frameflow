@@ -484,7 +484,7 @@ export function BoardSettings({ hideTrigger = false, isOpen: controlledIsOpen, o
 
                   <div className="rounded-lg border border-dashed px-3 py-4 text-sm" style={{ borderColor: `var(--ff-border)` }}>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: `#eff6ff`, color: `#2563eb` }}>
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: `color-mix(in srgb, var(--ff-primary) 12%, var(--ff-surface-solid))`, color: `var(--ff-primary)` }}>
                         <UserPlus size={14} />
                       </div>
                       <div>
@@ -627,7 +627,7 @@ export function BoardSettings({ hideTrigger = false, isOpen: controlledIsOpen, o
                         className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200 ${
                           wfRoles.includes('editor') ? 'border-orange-400' : 'border-gray-200 opacity-60'
                         }`}
-                        style={{ background: wfRoles.includes('editor') ? `color-mix(in srgb, #f97316 5%, var(--ff-surface-solid))` : `var(--ff-surface-solid)` }}
+                        style={{ background: wfRoles.includes('editor') ? `color-mix(in srgb, var(--ff-primary) 8%, var(--ff-surface-solid))` : `var(--ff-surface-solid)` }}
                       >
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${wfRoles.includes('editor') ? 'bg-orange-500' : 'bg-gray-300'}`}>E</div>
                         <div className="flex-1">
@@ -645,7 +645,7 @@ export function BoardSettings({ hideTrigger = false, isOpen: controlledIsOpen, o
                         className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all duration-200 ${
                           wfRoles.includes('asistente') ? 'border-emerald-400' : 'border-gray-200 opacity-60'
                         }`}
-                        style={{ background: wfRoles.includes('asistente') ? `color-mix(in srgb, #10b981 5%, var(--ff-surface-solid))` : `var(--ff-surface-solid)` }}
+                        style={{ background: wfRoles.includes('asistente') ? `color-mix(in srgb, var(--ff-success-text) 8%, var(--ff-surface-solid))` : `var(--ff-surface-solid)` }}
                       >
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${wfRoles.includes('asistente') ? 'bg-emerald-500' : 'bg-gray-300'}`}>A</div>
                         <div className="flex-1">
@@ -677,7 +677,7 @@ export function BoardSettings({ hideTrigger = false, isOpen: controlledIsOpen, o
                           className={`p-3 rounded-xl border-2 text-left transition-all duration-200 ${
                             wfEditorLevel === 'basic' ? 'border-orange-400 shadow-md shadow-orange-500/10' : 'border-gray-200'
                           }`}
-                          style={wfEditorLevel !== 'basic' ? { background: `var(--ff-surface-solid)` } : { background: `color-mix(in srgb, #f97316 5%, var(--ff-surface-solid))` }}
+                          style={wfEditorLevel !== 'basic' ? { background: `var(--ff-surface-solid)` } : { background: `color-mix(in srgb, var(--ff-primary) 8%, var(--ff-surface-solid))` }}
                         >
                           <p className="text-sm font-bold" style={{ color: `var(--ff-text-primary)` }}>Basico</p>
                           <p className="text-[10px] mt-0.5" style={{ color: `var(--ff-text-tertiary)` }}>Recibe brutos y edita. Solo ejecuta.</p>
@@ -687,7 +687,7 @@ export function BoardSettings({ hideTrigger = false, isOpen: controlledIsOpen, o
                           className={`p-3 rounded-xl border-2 text-left transition-all duration-200 ${
                             wfEditorLevel === 'full' ? 'border-orange-400 shadow-md shadow-orange-500/10' : 'border-gray-200'
                           }`}
-                          style={wfEditorLevel !== 'full' ? { background: `var(--ff-surface-solid)` } : { background: `color-mix(in srgb, #f97316 5%, var(--ff-surface-solid))` }}
+                          style={wfEditorLevel !== 'full' ? { background: `var(--ff-surface-solid)` } : { background: `color-mix(in srgb, var(--ff-primary) 8%, var(--ff-surface-solid))` }}
                         >
                           <p className="text-sm font-bold" style={{ color: `var(--ff-text-primary)` }}>Completo</p>
                           <p className="text-[10px] mt-0.5" style={{ color: `var(--ff-text-tertiary)` }}>Edita, propone cortes, gestiona archivos, Shorts independientes.</p>
@@ -717,7 +717,7 @@ export function BoardSettings({ hideTrigger = false, isOpen: controlledIsOpen, o
                                 ? 'border-emerald-400 shadow-md shadow-emerald-500/10 scale-[1.02]'
                                 : 'border-gray-200 hover:border-gray-300'
                             }`}
-                            style={wfAssistantLevel !== opt.value ? { background: `var(--ff-surface-solid)` } : { background: `color-mix(in srgb, #10b981 5%, var(--ff-surface-solid))` }}
+                            style={wfAssistantLevel !== opt.value ? { background: `var(--ff-surface-solid)` } : { background: `color-mix(in srgb, var(--ff-success-text) 8%, var(--ff-surface-solid))` }}
                           >
                             <span className="text-lg">{opt.emoji}</span>
                             <p className="text-xs font-bold mt-1" style={{ color: `var(--ff-text-primary)` }}>{opt.label}</p>

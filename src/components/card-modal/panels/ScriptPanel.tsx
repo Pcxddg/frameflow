@@ -92,7 +92,7 @@ export function ScriptPanel({ card, expanded, onToggle, actions, ai, readOnly, s
         background: 'linear-gradient(135deg, color-mix(in srgb, var(--ff-primary) 90%, #0f172a), color-mix(in srgb, var(--ff-accent) 78%, #0f172a))',
         color: '#ffffff',
         border: '1px solid color-mix(in srgb, var(--ff-primary) 38%, rgba(255,255,255,0.22))',
-        boxShadow: '0 10px 26px rgba(37, 99, 235, 0.24)',
+        boxShadow: `var(--ff-shadow-md)`,
       }
     : subtleButtonStyle;
 

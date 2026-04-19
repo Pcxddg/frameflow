@@ -133,7 +133,7 @@ export function Card({
     ? '#22c55e'
     : scheduleStatus === 'extra_active'
     ? '#0f766e'
-    : '#3b82f6';
+    : 'var(--ff-primary)';
   const scheduleChipClassName = scheduleStatus === 'blocked'
     ? 'bg-rose-100 text-rose-700'
     : scheduleStatus === 'overdue'
