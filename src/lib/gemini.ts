@@ -132,6 +132,18 @@ async function invokeAiAssist(request: GeminiGenerateContentRequest): Promise<Ge
   });
 
   if (error) {
+    const ctx = (error as { context?: Response }).context;
+    if (ctx && typeof ctx.text === 'function') {
+      try {
+        const body = await ctx.clone().text();
+        const parsed = body ? JSON.parse(body) : null;
+        const detail = parsed?.error || body;
+        const status = parsed?.status ?? ctx.status;
+        throw new Error(JSON.stringify({ code: status, status: String(status), message: detail }));
+      } catch (readErr) {
+        if (readErr instanceof Error && readErr.message.startsWith('{')) throw readErr;
+      }
+    }
     throw error;
   }
 
