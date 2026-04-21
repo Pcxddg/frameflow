@@ -42,7 +42,7 @@ function resolveInitialPanel(section?: CardModalSectionId, location?: CardModalL
   return phasePanel || 'idea';
 }
 
-export function CardModalV2({ card, onClose, initialSection = 'summary', initialLocation, readOnly = false }: CardModalProps) {
+export function CardModal({ card, onClose, initialSection = 'summary', initialLocation, readOnly = false }: CardModalProps) {
   const derived = useCardDerived(card, readOnly);
   const actions = useCardActions(card, readOnly);
   const ai = useCardAi(card, actions, readOnly);

@@ -2,7 +2,7 @@ import { Draggable } from '@hello-pangea/dnd';
 import { CheckSquare, User, Trash2, Pencil, ArrowRightLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Card as CardType, BoardDensity, CardMetaMode } from '../types';
-import { CardModal } from './CardModal';
+import { CardModal } from './card-modal/CardModal';
 import { useBoard } from '../store';
 import { getProductionFlowSummary, getScheduleStatusLabel } from '../lib/optimizedVideoFlow';
 import { getPhaseCompletionStatus } from '../lib/workflowPlans';

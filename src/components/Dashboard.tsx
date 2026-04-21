@@ -26,7 +26,7 @@ import {
 import { useBoard } from '../store';
 import { AuditEvent, Card } from '../types';
 import { InterlinkingGraph } from './InterlinkingGraph';
-import { CardModal } from './CardModal';
+import { CardModal } from './card-modal/CardModal';
 import { fetchYouTubeChannelData, YouTubeChannelStats, YouTubeRecentVideo } from '../lib/youtube';
 import { DataQuality, getBoardDataQuality, normalizeCardForPersistence } from '../lib/audit';
 import { useIsMobile } from '../hooks/useIsMobile';
