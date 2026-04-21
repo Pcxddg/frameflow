@@ -38,6 +38,7 @@ import {
   type TitleBatch,
 } from '../../../lib/aiContracts';
 import { trackProductEvent } from '../../../lib/analytics';
+import { stripMarkdownCodeFence } from '../../../lib/aiParsing';
 import { useBoard } from '../../../store';
 
 function trimOptional(value?: string) {
@@ -49,14 +50,6 @@ function parseTitleLines(text?: string) {
     .split('\n')
     .map((line) => line.replace(/^\s*\d+[\)\].:-]?\s*/, '').replace(/^\[(SEO|CLICK|GAP)\]\s*/i, '').trim())
     .filter(Boolean);
-}
-
-function stripMarkdownCodeFence(raw: string) {
-  return raw
-    .trim()
-    .replace(/^```(?:json)?/i, '')
-    .replace(/```$/i, '')
-    .trim();
 }
 
 function parseThumbnailPromptVariants(text?: string | null) {

@@ -1,5 +1,6 @@
 import type { BoardSeoConfig, ProductionBrief } from '../types';
 import { GEMINI_FLASH_MODEL, generateContentWithRetry } from './gemini';
+import { stripMarkdownCodeFence } from './aiParsing';
 
 export type SeoSourceUsed = 'seoSourceText' | 'guion' | 'brief';
 
@@ -18,14 +19,6 @@ export interface VideoSeoDraft {
   keywords: string[];
   hashtags: string[];
   sourceUsed: SeoSourceUsed;
-}
-
-function stripMarkdownCodeFence(raw: string) {
-  return raw
-    .trim()
-    .replace(/^```(?:json)?/i, '')
-    .replace(/```$/i, '')
-    .trim();
 }
 
 function normalizeString(value: unknown, fallback = '') {

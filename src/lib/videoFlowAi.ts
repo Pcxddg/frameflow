@@ -1,4 +1,5 @@
 import { GEMINI_FLASH_MODEL, generateContentWithRetry } from './gemini';
+import { stripMarkdownCodeFence } from './aiParsing';
 
 export interface VideoSeedGenerationInput {
   idea: string;
@@ -36,14 +37,6 @@ export type VideoSeedSection = 'title' | 'hook' | 'research' | 'script';
 type GenerationFocus = 'package' | VideoSeedSection;
 
 const DEFAULT_TITLE = 'Titulo provisional por validar';
-
-function stripMarkdownCodeFence(raw: string) {
-  return raw
-    .trim()
-    .replace(/^```(?:json)?/i, '')
-    .replace(/```$/i, '')
-    .trim();
-}
 
 function normalizeString(value: unknown, fallback = '') {
   return typeof value === 'string' ? value.trim() : fallback;
