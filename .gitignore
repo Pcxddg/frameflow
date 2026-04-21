@@ -13,3 +13,8 @@ YouTube_Growth_Engineering.pdf
 
 # Firebase service account keys (NEVER commit these)
 gen-lang-client-*.json
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
