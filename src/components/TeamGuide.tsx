@@ -7,7 +7,7 @@ import { buildGuideSyncSnapshot, getAuditRoleLabel, getScheduleStatusLabel } fro
 import type { CardModalLocation } from '../lib/cardModalEvents';
 import { resolveGuideStageToCardLocation } from '../lib/cardModalEvents';
 
-// â”€â”€â”€ Custom tasks & reassignments (persisted per day in localStorage) â”€â”€â”€
+// Custom tasks & reassignments (persisted per day in localStorage)
 
 type RoleKey = 'creador' | 'editor' | 'asistente';
 
@@ -62,7 +62,7 @@ type Tab = 'today' | 'workflow' | 'roles' | 'strategy';
 
 const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 
-// â”€â”€â”€ LocalStorage helpers for daily checklist â”€â”€â”€
+// LocalStorage helpers for daily checklist
 
 function getTodayKey(): string {
   const d = new Date();
@@ -90,7 +90,7 @@ function areActiveVideoIdsEqual(a: string[], b: string[]): boolean {
   return a.every((value, index) => value === b[index]);
 }
 
-// â”€â”€â”€ Role colors â”€â”€â”€
+// Role colors
 
 const ROLE_COLORS = {
   creador: { bg: 'bg-[color-mix(in_srgb,var(--ff-primary)_14%,var(--ff-surface-solid))]', bgLight: 'bg-[color-mix(in_srgb,var(--ff-primary)_7%,var(--ff-bg))]', border: 'color-mix(in srgb, var(--ff-primary) 35%, transparent)', text: 'text-[var(--ff-primary-dark)]', accent: 'bg-[var(--ff-primary)]', check: 'text-[var(--ff-primary)]', badge: 'bg-[var(--ff-primary)]' },
@@ -117,7 +117,7 @@ interface TeamGuideProps {
   onRequestOpenCard?: (cardId: string, location?: CardModalLocation) => void;
 }
 
-// â”€â”€â”€ Component â”€â”€â”€
+// Component
 
 export function TeamGuide({ hideTrigger = false, isOpen: controlledIsOpen, onOpenChange, onRequestOpenCard }: TeamGuideProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
