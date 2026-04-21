@@ -10,7 +10,7 @@ import { Dashboard } from './components/Dashboard';
 import { FilterBar, ContentFilter, AssigneeFilter } from './components/FilterBar';
 import { BoardSettings } from './components/BoardSettings';
 import { BoardProvider, useBoard } from './store';
-import { LogOut, Plus, LogIn, BarChart3, Layout, Users, Loader2, X, Trash2, UserPlus, Check, AlertCircle, ChevronDown, Tv, Home, Info, Menu, MessageSquare, Settings, Shield, Eye } from 'lucide-react';
+import { LogOut, Plus, LogIn, BarChart3, Layout, Users, Loader2, X, Trash2, UserPlus, Check, AlertCircle, Home, Info, Menu, MessageSquare, Settings, Shield, Eye } from 'lucide-react';
 import { AppHeader } from './components/AppHeader';
 import { ChannelHome } from './components/ChannelHome';
 import { useState, useRef, useEffect, useMemo } from 'react';
