@@ -1,4 +1,4 @@
-import type { Card } from '../types';
+import type { CardData } from '../types';
 
 function compactWhitespace(value?: string | null) {
   return (value || '').replace(/\s+/g, ' ').trim();
@@ -32,7 +32,7 @@ function extractScriptSummary(script?: string | null) {
   return summary.length > 320 ? `${summary.slice(0, 317).trim()}...` : summary;
 }
 
-function deriveOverlayText(card: Card, overlayText?: string) {
+function deriveOverlayText(card: CardData, overlayText?: string) {
   const explicit = compactWhitespace(overlayText);
   if (explicit) return explicit;
 
@@ -140,7 +140,7 @@ function deriveContextElement(searchable: string) {
   return 'Fondo contextual muy simple, solo para reforzar de que trata el video.';
 }
 
-function deriveVisualAngle(card: Card, concept: string, promise: string, referenceTitle: string) {
+function deriveVisualAngle(card: CardData, concept: string, promise: string, referenceTitle: string) {
   const searchable = `${referenceTitle} ${promise} ${concept} ${card.gancho8s || ''}`.toLowerCase();
 
   if (/(vs|versus|compar|contra|mejor|peor|o\s)/.test(searchable)) {
@@ -163,7 +163,7 @@ function deriveVisualAngle(card: Card, concept: string, promise: string, referen
 }
 
 export function buildThumbnailGenerationPrompt(
-  card: Card,
+  card: CardData,
   options?: {
     concept?: string;
     overlayText?: string;

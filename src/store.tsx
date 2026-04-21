@@ -6,7 +6,7 @@ import {
   Board,
   BoardPresenceEvent,
   BoardPresenceMember,
-  Card,
+  CardData,
   Checklist,
   CreateVideoFromFlowInput,
   Label,
@@ -108,7 +108,7 @@ interface BoardContextType {
   updateBoardMeta: (updates: Partial<Board>) => Promise<void>;
   addCard: (listId: string, title: string) => void;
   createVideoFromFlow: (input: CreateVideoFromFlowInput) => void;
-  updateCard: (cardId: string, updates: Partial<Card>) => void;
+  updateCard: (cardId: string, updates: Partial<CardData>) => void;
   setProductionStageStatus: (cardId: string, stageId: ProductionStageId, status: ProductionStageStatus) => void;
   updateProductionStage: (cardId: string, stageId: ProductionStageId, updates: Partial<{ dueAt: string; notes: string }>) => void;
   deleteCard: (cardId: string, listId: string) => void;
@@ -126,7 +126,7 @@ interface BoardContextType {
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
 
-function trackPublishReadyTransition(board: Board, previousCard: Card, nextCard: Card) {
+function trackPublishReadyTransition(board: Board, previousCard: CardData, nextCard: CardData) {
   const previousExecution = buildVideoExecutionSnapshot(previousCard, board);
   const nextExecution = buildVideoExecutionSnapshot(nextCard, board);
 
@@ -291,7 +291,7 @@ function removeCachedBoard(uid: string, boardId: string) {
   writeCachedBoards(uid, cachedBoards);
 }
 
-function detectChecklistProgressChange(previousCard: Card, nextCard: Card) {
+function detectChecklistProgressChange(previousCard: CardData, nextCard: CardData) {
   for (const nextChecklist of nextCard.checklists) {
     const previousChecklist = previousCard.checklists.find((item) => item.id === nextChecklist.id);
     if (!previousChecklist) continue;
@@ -322,7 +322,7 @@ function detectChecklistProgressChange(previousCard: Card, nextCard: Card) {
   return null;
 }
 
-function summarizeMonetization(card: Card) {
+function summarizeMonetization(card: CardData) {
   const monetization = card.monetization || {};
   const deals = monetization.deals || [];
 
@@ -337,7 +337,7 @@ function summarizeMonetization(card: Card) {
   };
 }
 
-function applyProductionFlowDerivedFields(card: Card, board: Board) {
+function applyProductionFlowDerivedFields(card: CardData, board: Board) {
   const summary = getProductionFlowSummary(card, board);
   if (!summary?.currentStage) return card;
 
@@ -927,7 +927,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const activeBoard = boardRef.current || board;
     if (!activeBoard || !canEditBoard) return;
     const now = new Date().toISOString();
-    const newCard: Card = {
+    const newCard: CardData = {
       id: `card-${uuidv4()}`,
       title,
       description: '',
@@ -1015,7 +1015,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     const targetListId = builtFlow.suggestedListId || activeBoard.lists[0]?.id;
     if (!targetListId) return;
 
-    const newCard: Card = normalizeCardForPersistence({
+    const newCard: CardData = normalizeCardForPersistence({
       id: newCardId,
       title: input.title.trim(),
       description: '',
@@ -1141,7 +1141,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const updateCard = (cardId: string, updates: Partial<Card>) => {
+  const updateCard = (cardId: string, updates: Partial<CardData>) => {
     const activeBoard = boardRef.current || board;
     if (!activeBoard || !canEditBoard) return;
     const currentCard = activeBoard.cards[cardId];

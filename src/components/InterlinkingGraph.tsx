@@ -1,11 +1,11 @@
 import { ArrowRight, Film, Zap, Link2 } from 'lucide-react';
 import { useBoard } from '../store';
-import { Card } from '../types';
+import { CardData } from '../types';
 
 interface LinkGroup {
   type: string;
   color: string;
-  links: { source: Card; target: Card }[];
+  links: { source: CardData; target: CardData }[];
 }
 
 export function InterlinkingGraph() {
@@ -16,7 +16,7 @@ export function InterlinkingGraph() {
   const cards = Object.values(board.cards);
 
   // Build link groups
-  const rawLinks: { source: Card; target: Card }[] = [];
+  const rawLinks: { source: CardData; target: CardData }[] = [];
   cards.forEach(card => {
     // interlinkingTargets
     card.interlinkingTargets?.forEach(targetId => {
@@ -41,7 +41,7 @@ export function InterlinkingGraph() {
   }
 
   // Classify links
-  const classify = (source: Card, target: Card): string => {
+  const classify = (source: CardData, target: CardData): string => {
     if (source.contentType === 'short' && target.contentType === 'long') return 'Short → Largo';
     if (source.contentType === 'long' && target.contentType === 'long') {
       if (target.monetization?.sellsProduct || target.monetization?.hasAffiliate) return 'Viral → Ventas';
@@ -51,7 +51,7 @@ export function InterlinkingGraph() {
     return 'Otro';
   };
 
-  const groupMap = new Map<string, { source: Card; target: Card }[]>();
+  const groupMap = new Map<string, { source: CardData; target: CardData }[]>();
   rawLinks.forEach(link => {
     const type = classify(link.source, link.target);
     if (!groupMap.has(type)) groupMap.set(type, []);
@@ -119,7 +119,7 @@ export function InterlinkingGraph() {
   );
 }
 
-function CardChip({ card }: { card: Card }) {
+function CardChip({ card }: { card: CardData }) {
   return (
     <div className="flex items-center gap-1.5 min-w-0">
       {card.contentType === 'short' ? (

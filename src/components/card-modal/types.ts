@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode, RefObject } from 'react';
 import type {
   BoardSeoConfig,
-  Card as CardType,
+  CardData,
   ProductionBrief,
   ProductionStage,
   ProductionStageId,
@@ -43,7 +43,7 @@ export interface PanelShellProps {
 }
 
 export interface CardActions {
-  updateCard: (updates: Partial<CardType>) => void;
+  updateCard: (updates: Partial<CardData>) => void;
   updateBrief: (updates: Partial<ProductionBrief>) => void;
   deleteCard: () => void;
   moveToSuggested: () => void;

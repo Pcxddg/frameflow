@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Card as CardType, ProductionBrief } from '../../../types';
+import type { CardData, ProductionBrief } from '../../../types';
 import type {
   CardActions,
   CardAiState,
@@ -80,7 +80,7 @@ function mergeProductionBrief(
   };
 }
 
-export function useCardAi(card: CardType, actions: CardActions, readOnly: boolean): CardAiState {
+export function useCardAi(card: CardData, actions: CardActions, readOnly: boolean): CardAiState {
   const { board } = useBoard();
 
   const [isGeneratingTitles, setIsGeneratingTitles] = useState(false);

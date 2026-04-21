@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Pencil, AlertTriangle } from 'lucide-react';
-import type { Card as CardType, ProductionStageId, ProductionStageStatus } from '../../../types';
+import type { CardData, ProductionStageId, ProductionStageStatus } from '../../../types';
 import type { CardActions, CardDerived } from '../types';
 import { PanelShell } from '../shared/PanelShell';
 import { CollapsedPreview } from '../shared/CollapsedPreview';
@@ -18,7 +18,7 @@ import { getAuditRoleLabel, findStageChecklist } from '../../../lib/optimizedVid
 import { CHECKLIST_TEMPLATES } from '../../../store';
 
 interface EditingPanelProps {
-  card: CardType;
+  card: CardData;
   expanded: boolean;
   onToggle: () => void;
   actions: CardActions;

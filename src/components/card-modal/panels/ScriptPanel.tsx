@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { FileText, Pencil, Play } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import type { Card as CardType } from '../../../types';
+import type { CardData } from '../../../types';
 import type { CardActions, CardAiState } from '../types';
 import { PanelShell } from '../shared/PanelShell';
 import { CollapsedPreview } from '../shared/CollapsedPreview';
@@ -14,7 +14,7 @@ import TeleprompterOverlay from '../../TeleprompterOverlay';
 import { trackProductEvent } from '../../../lib/analytics';
 
 interface ScriptPanelProps {
-  card: CardType;
+  card: CardData;
   expanded: boolean;
   onToggle: () => void;
   actions: CardActions;
@@ -52,7 +52,7 @@ export function ScriptPanel({ card, expanded, onToggle, actions, ai, readOnly, s
   }, [setPanelRef]);
 
   const save = () => {
-    const updates: Partial<CardType> = {
+    const updates: Partial<CardData> = {
       guion: draft.guion,
       storytelling: {
         queria: draft.queria,

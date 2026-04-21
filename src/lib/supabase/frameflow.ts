@@ -4,7 +4,7 @@ import type {
   Board,
   BoardPresenceEvent,
   BoardPresenceMember,
-  Card,
+  CardData,
   Checklist,
   Label,
   MemberRole,
@@ -133,7 +133,7 @@ function buildCardFromRows(
   checklistItemsByCardId: Map<string, any[]>,
   flowByCardId: Map<string, any>,
   stagesByCardId: Map<string, any[]>
-): Card {
+): CardData {
   const productionFlowRow = flowByCardId.get(row.id);
   const stageRows = sortByPosition(stagesByCardId.get(row.id) || []);
   const checklists = parseChecklistRows(
@@ -171,21 +171,21 @@ function buildCardFromRows(
     ctr2Hours: row.ctr_2_hours || '',
     interlinking: row.interlinking || '',
     linkDrive: row.link_drive || '',
-    driveLinks: parseJsonObject(row.drive_links) as Card['driveLinks'],
+    driveLinks: parseJsonObject(row.drive_links) as CardData['driveLinks'],
     guion: row.guion || '',
     contentType: row.content_type || undefined,
     keywords: row.keywords || '',
-    storytelling: parseJsonObject(row.storytelling) as Card['storytelling'],
-    postPublication: parseJsonObject(row.post_publication) as Card['postPublication'],
-    monetization: parseJsonObject(row.monetization) as Card['monetization'],
+    storytelling: parseJsonObject(row.storytelling) as CardData['storytelling'],
+    postPublication: parseJsonObject(row.post_publication) as CardData['postPublication'],
+    monetization: parseJsonObject(row.monetization) as CardData['monetization'],
     interlinkingTargets: parseJsonArray(row.interlinking_targets) as string[],
     shortsHook: row.shorts_hook || '',
     shortsLoop: row.shorts_loop || false,
     shortsFunnel: row.shorts_funnel || '',
-    columnHistory: parseJsonArray(row.column_history) as Card['columnHistory'],
+    columnHistory: parseJsonArray(row.column_history) as CardData['columnHistory'],
     createdAt: fromIsoString(row.created_at),
     updatedAt: fromIsoString(row.updated_at),
-    productionBrief: parseJsonObject(row.production_brief) as unknown as Card['productionBrief'],
+    productionBrief: parseJsonObject(row.production_brief) as unknown as CardData['productionBrief'],
     seoSourceText: row.seo_source_text || '',
     productionFlow: productionFlowRow ? {
       templateId: productionFlowRow.template_id,
@@ -282,7 +282,7 @@ function buildBoardFromSnapshot(snapshot: {
     cardIds: [],
   }));
 
-  const cards: Record<string, Card> = {};
+  const cards: Record<string, CardData> = {};
   const cardsByList = new Map<string, string[]>();
   sortByPosition(snapshot.cardRows || []).forEach((row) => {
     const card = buildCardFromRows(
@@ -347,7 +347,7 @@ function boardToDb(board: Board) {
   };
 }
 
-function cardToDb(boardId: string, card: Card, position: number) {
+function cardToDb(boardId: string, card: CardData, position: number) {
   return {
     id: card.id,
     board_id: boardId,
@@ -384,7 +384,7 @@ function cardToDb(boardId: string, card: Card, position: number) {
   };
 }
 
-function buildCardGraphRows(boardId: string, card: Card) {
+function buildCardGraphRows(boardId: string, card: CardData) {
   const cardLabelRows: any[] = [];
   const checklistRows: any[] = [];
   const checklistItemRows: any[] = [];
@@ -530,7 +530,7 @@ async function insertChunks(table: string, rows: any[]) {
   }
 }
 
-export async function replaceCardGraphMutation(boardId: string, card: Card, auditEvents: AuditEvent[] = []) {
+export async function replaceCardGraphMutation(boardId: string, card: CardData, auditEvents: AuditEvent[] = []) {
   const {
     cardLabelRows,
     checklistRows,
@@ -561,7 +561,7 @@ export async function replaceCardGraphMutation(boardId: string, card: Card, audi
 
 export async function createCardMutation(
   board: Board,
-  card: Card,
+  card: CardData,
   targetIndex?: number,
   auditEvents: AuditEvent[] = []
 ) {
@@ -584,7 +584,7 @@ export async function createCardMutation(
 
 export async function updateCardContentMutation(
   board: Board,
-  card: Card,
+  card: CardData,
   auditEvents: AuditEvent[] = []
 ) {
   const normalizedCard = normalizeCardForPersistence(card, board);
@@ -606,7 +606,7 @@ export async function updateCardContentMutation(
 
 export async function moveCardMutation(
   board: Board,
-  card: Card,
+  card: CardData,
   sourceListId: string,
   destListId: string,
   destIndex: number,

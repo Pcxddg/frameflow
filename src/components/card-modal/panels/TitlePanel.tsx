@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
-import type { Card as CardType } from '../../../types';
+import type { CardData } from '../../../types';
 import type { CardActions, CardAiState } from '../types';
 import { PanelShell } from '../shared/PanelShell';
 import { CollapsedPreview } from '../shared/CollapsedPreview';
@@ -68,7 +68,7 @@ function groupEntries(entries: TitleEntry[]) {
 }
 
 interface TitlePanelProps {
-  card: CardType;
+  card: CardData;
   expanded: boolean;
   onToggle: () => void;
   actions: CardActions;

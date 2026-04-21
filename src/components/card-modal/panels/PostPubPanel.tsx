@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Pencil, Trash2, ArrowRightLeft } from 'lucide-react';
-import type { Card as CardType } from '../../../types';
+import type { CardData } from '../../../types';
 import type { CardActions, CardDerived } from '../types';
 import { PanelShell } from '../shared/PanelShell';
 import { CollapsedPreview } from '../shared/CollapsedPreview';
@@ -9,7 +9,7 @@ import { PANEL_CONFIG } from '../constants';
 import { subtleButtonStyle, flowPrimaryActionStyle, dangerButtonStyle, raisedPanelStyle } from '../hooks/useFlowStyles';
 
 interface PostPubPanelProps {
-  card: CardType;
+  card: CardData;
   expanded: boolean;
   onToggle: () => void;
   actions: CardActions;

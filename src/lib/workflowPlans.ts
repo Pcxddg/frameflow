@@ -1,4 +1,4 @@
-import type { WorkflowConfig, Card, Board } from '../types';
+import type { WorkflowConfig, CardData, Board } from '../types';
 
 // ─── Types ───
 
@@ -847,7 +847,7 @@ export interface PhaseDefinition {
   supporter: RoleKey[];
   deliverable: string;
   doneCondition: string;
-  doneCheck: (card: Card) => boolean;
+  doneCheck: (card: CardData) => boolean;
   typicalRisk: string;
   estimatedHours: string;
   doNotDisturb: string;
@@ -968,7 +968,7 @@ export interface PriorityRule {
   id: string;
   priority: number;
   condition: string;
-  check: (card: Card, board: Board) => boolean;
+  check: (card: CardData, board: Board) => boolean;
   action: string;
   urgencyLabel: string;
   urgencyColor: 'red' | 'orange' | 'yellow' | 'blue' | 'green';
@@ -1105,7 +1105,7 @@ function getPhaseFromColumn(columnTitle: string): string {
 }
 
 export function diagnoseVideoState(
-  card: Card,
+  card: CardData,
   board: Board,
   scheduledPhaseId: string,
   pipelineIndex: number,
@@ -1236,7 +1236,7 @@ export const UX_COPY = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Phase Completion Status — surfacing doneCheck results for Card/CardModal UI
+// Phase Completion Status — surfacing doneCheck results for CardData/CardModal UI
 // ---------------------------------------------------------------------------
 
 export interface PhaseCompletionStatus {
@@ -1251,7 +1251,7 @@ export interface PhaseCompletionStatus {
 }
 
 /** Returns phase completion status for a card based on its current board column */
-export function getPhaseCompletionStatus(card: Card, board: Board): PhaseCompletionStatus {
+export function getPhaseCompletionStatus(card: CardData, board: Board): PhaseCompletionStatus {
   const column = board.lists.find(l => l.id === card.listId);
   const columnTitle = column?.title || '';
   const phaseId = getPhaseFromColumn(columnTitle);

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, Hand, ArrowRightLeft, X, Spark
 import { useBoard } from '../store';
 import { List } from './List';
 import { ContentFilter, AssigneeFilter } from './FilterBar';
-import { Card as CardType, List as ListType, BoardDensity, CardMetaMode, DesktopBoardLayoutPrefs } from '../types';
+import { CardData, List as ListType, BoardDensity, CardMetaMode, DesktopBoardLayoutPrefs } from '../types';
 import { CustomScrollbar } from './CustomScrollbar';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { NewVideoWizard } from './NewVideoWizard';
@@ -62,7 +62,7 @@ export function Board({
   const viewMenuRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [mobileListId, setMobileListId] = useState<string | null>(null);
-  const [moveCardTarget, setMoveCardTarget] = useState<CardType | null>(null);
+  const [moveCardTarget, setMoveCardTarget] = useState<CardData | null>(null);
   const [mobileToast, setMobileToast] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isNewVideoWizardOpen, setIsNewVideoWizardOpen] = useState(false);
@@ -167,7 +167,7 @@ export function Board({
     );
   }
 
-  const filterCard = (card: CardType): boolean => {
+  const filterCard = (card: CardData): boolean => {
     if (contentFilter !== 'all' && card.contentType !== contentFilter) return false;
     if (!matchesAssigneeFilter(card.assignee, assigneeFilter)) return false;
     return true;
@@ -203,7 +203,7 @@ export function Board({
   const visibleInActiveDesktopList = activeDesktopList
     ? activeDesktopList.cardIds
         .map((cardId) => board.cards[cardId])
-        .filter((card): card is CardType => !!card && filterCard(card)).length
+        .filter((card): card is CardData => !!card && filterCard(card)).length
     : 0;
   const blockedFlowCount = guidedCards.filter((card) => {
     const summary = getProductionFlowSummary(card, board);
@@ -493,7 +493,7 @@ export function Board({
                         {board.lists.map((list) => {
                           const visibleInList = list.cardIds
                             .map((cardId) => board.cards[cardId])
-                            .filter((card): card is CardType => !!card && filterCard(card)).length;
+                            .filter((card): card is CardData => !!card && filterCard(card)).length;
                           const isActive = list.id === activeDesktopList?.id;
 
                           return (
@@ -564,7 +564,7 @@ export function Board({
   }
   const activeList = board.lists.find((list) => list.id === mobileListId) || board.lists[0];
   const activeListIndex = board.lists.findIndex((list) => list.id === activeList?.id);
-  const visibleCount = activeList ? activeList.cardIds.map((cardId) => board.cards[cardId]).filter((card): card is CardType => !!card && filterCard(card)).length : 0;
+  const visibleCount = activeList ? activeList.cardIds.map((cardId) => board.cards[cardId]).filter((card): card is CardData => !!card && filterCard(card)).length : 0;
 
   const setActiveList = (list: ListType) => {
     setMobileListId(list.id);

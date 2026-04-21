@@ -24,7 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import { useBoard } from '../store';
-import { AuditEvent, Card } from '../types';
+import { AuditEvent, CardData } from '../types';
 import { InterlinkingGraph } from './InterlinkingGraph';
 import { CardModal } from './card-modal/CardModal';
 import { fetchYouTubeChannelData, YouTubeChannelStats, YouTubeRecentVideo } from '../lib/youtube';
@@ -55,7 +55,7 @@ interface DrawerState {
   quality: DataQuality;
   includedCount: number;
   excludedCount: number;
-  cards: Card[];
+  cards: CardData[];
   note?: string;
 }
 
@@ -133,13 +133,13 @@ function relativeTime(value?: string | null) {
   return `Hace ${Math.max(1, Math.round(diffMs / DAY_MS))} d`;
 }
 
-function getPublishedAt(card: Card, publishedListId?: string) {
+function getPublishedAt(card: CardData, publishedListId?: string) {
   if (card.postPublication?.publishedAt) return card.postPublication.publishedAt;
   if (!publishedListId || !card.columnHistory?.length) return null;
   return card.columnHistory.find((entry) => entry.listId === publishedListId)?.enteredAt || null;
 }
 
-function getLastMovementAt(card: Card) {
+function getLastMovementAt(card: CardData) {
   const history = card.columnHistory || [];
   const latestHistory = history.length > 0 ? history[history.length - 1]?.enteredAt : null;
   return card.updatedAt || latestHistory || card.createdAt || null;
@@ -165,7 +165,7 @@ function assigneeLabel(value: string | null | undefined) {
   return value;
 }
 
-function contentTypeLabel(value: Card['contentType'] | 'undefined') {
+function contentTypeLabel(value: CardData['contentType'] | 'undefined') {
   if (value === 'long') return 'Largo';
   if (value === 'short') return 'Short';
   return 'Sin tipo';
@@ -225,7 +225,7 @@ function getEventSeverity(event: AuditEvent): EventSeverity {
   return 'info';
 }
 
-function describeAuditEvent(event: AuditEvent, card?: Card | null) {
+function describeAuditEvent(event: AuditEvent, card?: CardData | null) {
   const cardTitle = String(event.payload?.cardTitle || card?.title || 'Tarjeta');
   const actor = event.actorEmail || 'Equipo';
   if (event.type === 'card_created') return { title: 'Tarjeta creada', body: `${actor} creo "${cardTitle}" en ${String(event.payload?.listTitle || 'una columna')}.` };
@@ -466,7 +466,7 @@ export function Dashboard() {
 
   const rawCards = Object.values(board.cards);
   const cards = rawCards.map((card) => normalizeCardForPersistence(card, board));
-  const cardsById = Object.fromEntries(cards.map((card) => [card.id, card])) as Record<string, Card>;
+  const cardsById = Object.fromEntries(cards.map((card) => [card.id, card])) as Record<string, CardData>;
   const publishedListId = board.lists[board.lists.length - 1]?.id;
   const cadence = board.workflowConfig?.cadence || 1;
   const rawQuality = getBoardDataQuality(rawCards);
@@ -577,7 +577,7 @@ export function Dashboard() {
       card,
       flow: getProductionFlowSummary(card, board),
     }))
-    .filter((item): item is { card: Card; flow: NonNullable<ReturnType<typeof getProductionFlowSummary>> } => !!item.flow);
+    .filter((item): item is { card: CardData; flow: NonNullable<ReturnType<typeof getProductionFlowSummary>> } => !!item.flow);
   const overdueStageCards = flowCards.filter((item) => item.flow.overdueStages.length > 0);
   const blockedFlowCards = flowCards.filter((item) => item.flow.blockedStages.length > 0 || item.flow.isColumnMismatch);
   const aiSeededPendingCards = flowCards.filter((item) => item.flow.aiSeededOpenStages.length > 0);
@@ -689,7 +689,7 @@ export function Dashboard() {
     title: string,
     subtitle: string,
     formula: string,
-    sourceCards: Card[],
+    sourceCards: CardData[],
     excludedCount = 0,
     note?: string
   ) => {
@@ -800,7 +800,7 @@ export function Dashboard() {
     severity: EventSeverity;
     count: number;
     note: string;
-    cards: Card[];
+    cards: CardData[];
     formula: string;
   }> = [
     { id: 'assignee', title: 'Sin responsable', severity: missingAssigneeCards.length > 0 ? 'warning' : 'positive', count: missingAssigneeCards.length, note: 'Cards abiertas que aun no tienen dueno.', cards: missingAssigneeCards, formula: 'Tarjetas abiertas con assignee vacio.' },

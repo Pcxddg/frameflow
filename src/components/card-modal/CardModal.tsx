@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
-import type { Card as CardType } from '../../types';
+import type { CardData } from '../../types';
 import type { CardModalLocation, CardModalSectionId } from '../../lib/cardModalEvents';
 import type { PanelId } from './types';
 
@@ -21,7 +21,7 @@ import { PublishPanel } from './panels/PublishPanel';
 import { PostPubPanel } from './panels/PostPubPanel';
 
 interface CardModalProps {
-  card: CardType;
+  card: CardData;
   onClose: () => void;
   initialSection?: CardModalSectionId;
   initialLocation?: CardModalLocation;

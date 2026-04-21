@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Clipboard, Pencil, Sparkles } from 'lucide-react';
-import type { Card as CardType, ThumbnailPlanStatus } from '../../../types';
+import type { CardData, ThumbnailPlanStatus } from '../../../types';
 import { buildThumbnailGenerationPrompt } from '../../../lib/thumbnailPrompt';
 import type { CardActions, CardAiState } from '../types';
 import { PanelShell } from '../shared/PanelShell';
@@ -21,7 +21,7 @@ const STATUS_LABELS: Record<ThumbnailPlanStatus, string> = {
 const STATUS_OPTIONS: ThumbnailPlanStatus[] = ['pending', 'draft', 'ready', 'approved'];
 
 interface ThumbnailPanelProps {
-  card: CardType;
+  card: CardData;
   expanded: boolean;
   onToggle: () => void;
   actions: CardActions;
@@ -106,7 +106,7 @@ export function ThumbnailPanel({
   }, [setPanelRef]);
 
   const save = () => {
-    const updates: Partial<CardType> = {
+    const updates: Partial<CardData> = {
       thumbnailPlan: {
         status: draft.status,
         concept: draft.concept,

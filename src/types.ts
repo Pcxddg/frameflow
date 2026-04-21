@@ -136,7 +136,7 @@ export interface BoardPresenceEvent {
   at: string;
 }
 
-export interface Card {
+export interface CardData {
   id: string;
   title: string;
   description: string;
@@ -274,7 +274,7 @@ export interface Board {
   members: string[];
   memberRoles?: Record<string, MemberRole>;
   lists: List[];
-  cards: Record<string, Card>;
+  cards: Record<string, CardData>;
   createdAt?: string;
   updatedAt?: string;
   videoCount?: number;

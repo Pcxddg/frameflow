@@ -1,7 +1,7 @@
 import {
   AuditRole,
   Board,
-  Card,
+  CardData,
   Checklist,
   CreateVideoFromFlowInput,
   ProductionBrief,
@@ -113,7 +113,7 @@ export interface VideoExecutionSnapshot {
 export type GuideAlertSeverity = 'critical' | 'warning' | 'info';
 
 export interface GuideFocusCard {
-  card: Card;
+  card: CardData;
   summary: ProductionFlowSummary;
   currentStage: ProductionStage;
   nextStage: ProductionStage | null;
@@ -179,7 +179,7 @@ export interface GuideSyncSnapshot {
   selectedCardIds: string[];
   autoSelectedCardIds: string[];
   hasManualOverride: boolean;
-  availableCards: Card[];
+  availableCards: CardData[];
   blockedCount: number;
   overdueCount: number;
   publishReadyCount: number;
@@ -847,7 +847,7 @@ export function updateProductionStageDetails(
   }) || normalized;
 }
 
-export function getProductionFlowSummary(card: Card, board: Board): ProductionFlowSummary | null {
+export function getProductionFlowSummary(card: CardData, board: Board): ProductionFlowSummary | null {
   const flow = normalizeProductionFlow(card.productionFlow);
   if (!flow) return null;
 
@@ -898,7 +898,7 @@ export function getProductionFlowSummary(card: Card, board: Board): ProductionFl
   };
 }
 
-export function getSuggestedFlowColumn(card: Card, board: Board) {
+export function getSuggestedFlowColumn(card: CardData, board: Board) {
   const summary = getProductionFlowSummary(card, board);
   if (!summary || !summary.currentStage || summary.isComplete) return null;
   if (!summary.expectedColumnId || summary.expectedColumnId === card.listId) return null;
@@ -910,13 +910,13 @@ export function getSuggestedFlowColumn(card: Card, board: Board) {
   };
 }
 
-export function findStageChecklist(card: Card, stageId: ProductionStageId) {
+export function findStageChecklist(card: CardData, stageId: ProductionStageId) {
   return card.checklists.find((checklist) => checklist.id === createChecklistId(stageId))
     || card.checklists.find((checklist) => checklist.title === getStageDefinition(stageId)?.checklistTitle)
     || null;
 }
 
-export function getGuideChecklistProgress(card: Card, stageId: ProductionStageId): GuideChecklistProgress {
+export function getGuideChecklistProgress(card: CardData, stageId: ProductionStageId): GuideChecklistProgress {
   const checklist = findStageChecklist(card, stageId);
   const totalCount = checklist?.items.length || 0;
   const completedCount = checklist?.items.filter((item) => item.isCompleted).length || 0;
@@ -931,7 +931,7 @@ export function getGuideChecklistProgress(card: Card, stageId: ProductionStageId
   };
 }
 
-export function buildVideoExecutionSnapshot(card: Card, board: Board): VideoExecutionSnapshot {
+export function buildVideoExecutionSnapshot(card: CardData, board: Board): VideoExecutionSnapshot {
   const summary = getProductionFlowSummary(card, board);
   const currentStage = summary?.currentStage || null;
   const nextStage = summary?.nextStage || null;
@@ -1147,7 +1147,7 @@ function getGuideFocusComparator() {
 }
 
 function createGuideAlert(
-  card: Card,
+  card: CardData,
   focusCard: GuideFocusCard,
   severity: GuideAlertSeverity,
   title: string,
@@ -1167,7 +1167,7 @@ function createGuideAlert(
   };
 }
 
-function buildGuideFocusCard(card: Card, board: Board, priorityRank: number): GuideFocusCard | null {
+function buildGuideFocusCard(card: CardData, board: Board, priorityRank: number): GuideFocusCard | null {
   const summary = getProductionFlowSummary(card, board);
   if (!summary?.currentStage || summary.isComplete) return null;
 
@@ -1382,7 +1382,7 @@ export function buildGuideSyncSnapshot(
     // Bootstrap flow on-the-fly for cards without one
     const { productionFlow, checklists } = bootstrapMinimalFlow(card, board);
     return { ...card, productionFlow, checklists: [...card.checklists, ...checklists] };
-  }).filter((card): card is Card => card !== null);
+  }).filter((card): card is CardData => card !== null);
 
   const rankedCards = openFlowCards
     .map((card, index) => buildGuideFocusCard(card, board, index))
@@ -1473,7 +1473,7 @@ const MACRO_COLUMN_ORDER: MacroColumnKey[] = ['ideas', 'titles', 'script', 'reco
  * The current column's first stage is `in_progress`.
  * Remaining stages are `pending`.
  */
-export function bootstrapMinimalFlow(card: Card, board: Board): { productionFlow: ProductionFlow; checklists: Checklist[] } {
+export function bootstrapMinimalFlow(card: CardData, board: Board): { productionFlow: ProductionFlow; checklists: Checklist[] } {
   const now = new Date().toISOString();
   const currentMacro = resolveMacroColumnKeyForList(board, card.listId);
   const currentMacroIndex = MACRO_COLUMN_ORDER.indexOf(currentMacro);
@@ -1553,10 +1553,10 @@ export function bootstrapMinimalFlow(card: Card, board: Board): { productionFlow
  * Returns updated card fields or null if no flow exists.
  */
 export function syncFlowToColumn(
-  card: Card,
+  card: CardData,
   newListId: string,
   board: Board,
-): Partial<Card> | null {
+): Partial<CardData> | null {
   const flow = normalizeProductionFlow(card.productionFlow);
   if (!flow) return null;
 

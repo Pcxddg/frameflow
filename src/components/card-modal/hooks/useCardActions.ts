@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import { useBoard, CHECKLIST_TEMPLATES } from '../../../store';
-import type { Card as CardType, ProductionBrief, ProductionStageId, ProductionStageStatus } from '../../../types';
+import type { CardData, ProductionBrief, ProductionStageId, ProductionStageStatus } from '../../../types';
 import { EMPTY_PRODUCTION_BRIEF } from './useCardDerived';
 import { getSuggestedFlowColumn } from '../../../lib/optimizedVideoFlow';
 import type { CardActions } from '../types';
 
-export function useCardActions(card: CardType, readOnly: boolean): CardActions {
+export function useCardActions(card: CardData, readOnly: boolean): CardActions {
   const { board, updateCard, deleteCard, moveCard, addChecklist, toggleChecklistItem, toggleLabel, setProductionStageStatus, updateProductionStage } = useBoard();
 
-  const updateCardSafe = useCallback((updates: Partial<CardType>) => {
+  const updateCardSafe = useCallback((updates: Partial<CardData>) => {
     if (readOnly) return;
     updateCard(card.id, updates);
   }, [card.id, readOnly, updateCard]);

@@ -1,7 +1,7 @@
 import { Draggable } from '@hello-pangea/dnd';
 import { CheckSquare, User, Trash2, Pencil, ArrowRightLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Card as CardType, BoardDensity, CardMetaMode } from '../types';
+import { CardData, BoardDensity, CardMetaMode } from '../types';
 import { CardModal } from './card-modal/CardModal';
 import { useBoard } from '../store';
 import { getProductionFlowSummary, getScheduleStatusLabel } from '../lib/optimizedVideoFlow';
@@ -9,12 +9,12 @@ import { getPhaseCompletionStatus } from '../lib/workflowPlans';
 import { CardModalLocation, CardModalSectionId, OPEN_CARD_MODAL_EVENT, OpenCardModalDetail, resolveLegacyCardModalLocation, resolveLegacySectionFromLocation } from '../lib/cardModalEvents';
 
 interface CardProps {
-  card: CardType;
+  card: CardData;
   index: number;
   draggable?: boolean;
   mobileMode?: boolean;
   canEdit?: boolean;
-  onMoveRequest?: (card: CardType) => void;
+  onMoveRequest?: (card: CardData) => void;
   density?: BoardDensity;
   cardMetaMode?: CardMetaMode;
 }

@@ -2,7 +2,7 @@ import { Droppable } from '@hello-pangea/dnd';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useBoard } from '../store';
-import { List as ListType, Card as CardType, BoardDensity, CardMetaMode } from '../types';
+import { List as ListType, CardData, BoardDensity, CardMetaMode } from '../types';
 import { Card } from './Card';
 
 interface ListProps {
@@ -10,10 +10,10 @@ interface ListProps {
   listIndex?: number;
   totalLists?: number;
   isActiveDesktop?: boolean;
-  filterCard?: (card: CardType) => boolean;
+  filterCard?: (card: CardData) => boolean;
   mobileMode?: boolean;
   canEdit?: boolean;
-  onMoveRequest?: (card: CardType) => void;
+  onMoveRequest?: (card: CardData) => void;
   density?: BoardDensity;
   cardMetaMode?: CardMetaMode;
 }
@@ -38,7 +38,7 @@ export function List({
 
   const visibleCards = list.cardIds
     .map((cardId) => board.cards[cardId])
-    .filter((card): card is CardType => !!card && (!filterCard || filterCard(card)));
+    .filter((card): card is CardData => !!card && (!filterCard || filterCard(card)));
 
   const compactDesktop = !mobileMode && density === 'compact';
   const desktopColumnWidth = density === 'focus'

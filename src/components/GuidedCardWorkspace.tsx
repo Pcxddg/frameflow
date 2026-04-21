@@ -22,7 +22,7 @@ import {
   type VideoExecutionSnapshot,
 } from '../lib/optimizedVideoFlow';
 import {
-  Card as CardType,
+  CardData,
   type LabelColor,
   type ProductionBrief,
   type ProductionStage,
@@ -38,7 +38,7 @@ type FlowTone = 'success' | 'danger' | 'warning' | 'info' | 'neutral' | 'brand';
 type GuidedEditKey = 'brief' | 'package' | 'production' | 'publish' | null;
 
 interface GuidedCardWorkspaceProps {
-  card: CardType;
+  card: CardData;
   onClose: () => void;
   initialLocation: CardModalLocation;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
@@ -57,7 +57,7 @@ interface GuidedCardWorkspaceProps {
   onAcceptSuggestedTitle: () => void;
   onDismissSuggestedTitle: () => void;
   readOnly: boolean;
-  onUpdateCard: (updates: Partial<CardType>) => void;
+  onUpdateCard: (updates: Partial<CardData>) => void;
   onToggleLabel: (label: (typeof LABELS)[number]) => void;
   productionBrief: ProductionBrief;
   onUpdateProductionBrief: (updates: Partial<ProductionBrief>) => void;
@@ -152,7 +152,7 @@ function toIsoOrNull(value: string) {
   return parsed.toISOString();
 }
 
-function buildFallbackExecution(card: CardType, currentFlowStage: ProductionStage | null, flowSummary: ProductionFlowSummary | null): VideoExecutionSnapshot {
+function buildFallbackExecution(card: CardData, currentFlowStage: ProductionStage | null, flowSummary: ProductionFlowSummary | null): VideoExecutionSnapshot {
   return {
     currentStage: currentFlowStage,
     nextStage: flowSummary?.nextStage || null,
@@ -865,7 +865,7 @@ export function GuidedCardWorkspace({
   const applySeoDraft = (mode: 'description' | 'keywords' | 'both') => {
     if (!seoDraft) return;
 
-    const nextUpdates: Partial<CardType> = {
+    const nextUpdates: Partial<CardData> = {
       seoSourceText: seoSourceDraft,
     };
 

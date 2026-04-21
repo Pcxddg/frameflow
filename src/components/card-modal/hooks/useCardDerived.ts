@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useBoard } from '../../../store';
-import type { Card as CardType, ProductionBrief } from '../../../types';
+import type { CardData, ProductionBrief } from '../../../types';
 import {
   buildVideoExecutionSnapshot,
   getProductionFlowCurrentStage,
@@ -24,7 +24,7 @@ const EMPTY_PRODUCTION_BRIEF: ProductionBrief = {
   openQuestions: [],
 };
 
-function buildFallbackExecution(card: CardType): VideoExecutionSnapshot {
+function buildFallbackExecution(card: CardData): VideoExecutionSnapshot {
   const stage = getProductionFlowCurrentStage(card.productionFlow) || null;
   return {
     currentStage: stage,
@@ -45,7 +45,7 @@ function buildFallbackExecution(card: CardType): VideoExecutionSnapshot {
   };
 }
 
-export function useCardDerived(card: CardType, readOnly: boolean): CardDerived {
+export function useCardDerived(card: CardData, readOnly: boolean): CardDerived {
   const { board } = useBoard();
 
   const listIndex = board?.lists.findIndex(l => l.id === card.listId) ?? 0;

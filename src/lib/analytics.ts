@@ -9,7 +9,10 @@ export type ProductAnalyticsEvent =
   | 'thumbnail_prompt_generated'
   | 'seo_applied'
   | 'production_stage_completed'
-  | 'publish_ready_reached';
+  | 'publish_ready_reached'
+  | 'kanban_authoritative_refresh'
+  | 'kanban_mutation_failed'
+  | 'kanban_save_conflict';
 
 type AnalyticsProvider = 'posthog' | 'debug';
 

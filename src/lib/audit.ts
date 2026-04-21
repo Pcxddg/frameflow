@@ -1,23 +1,23 @@
-import { Board, Card } from '../types';
+import { Board, CardData } from '../types';
 import { normalizeProductionFlow } from './optimizedVideoFlow';
 
 export type DataQuality = 'complete' | 'partial' | 'missing';
 
-function findFirstHistoryEntry(card: Card) {
+function findFirstHistoryEntry(card: CardData) {
   const history = [...(card.columnHistory || [])].sort(
     (a, b) => new Date(a.enteredAt).getTime() - new Date(b.enteredAt).getTime()
   );
   return history[0];
 }
 
-function findLastHistoryEntry(card: Card) {
+function findLastHistoryEntry(card: CardData) {
   const history = [...(card.columnHistory || [])].sort(
     (a, b) => new Date(b.enteredAt).getTime() - new Date(a.enteredAt).getTime()
   );
   return history[0];
 }
 
-export function inferCardCreatedAt(card: Card, board?: Pick<Board, 'createdAt' | 'updatedAt'> | null) {
+export function inferCardCreatedAt(card: CardData, board?: Pick<Board, 'createdAt' | 'updatedAt'> | null) {
   return card.createdAt
     || findFirstHistoryEntry(card)?.enteredAt
     || board?.createdAt
@@ -25,7 +25,7 @@ export function inferCardCreatedAt(card: Card, board?: Pick<Board, 'createdAt' |
     || new Date().toISOString();
 }
 
-export function inferCardUpdatedAt(card: Card, board?: Pick<Board, 'createdAt' | 'updatedAt'> | null) {
+export function inferCardUpdatedAt(card: CardData, board?: Pick<Board, 'createdAt' | 'updatedAt'> | null) {
   return card.updatedAt
     || card.postPublication?.publishedAt
     || findLastHistoryEntry(card)?.enteredAt
@@ -34,7 +34,7 @@ export function inferCardUpdatedAt(card: Card, board?: Pick<Board, 'createdAt' |
     || new Date().toISOString();
 }
 
-export function normalizeCardForPersistence(card: Card, board?: Pick<Board, 'createdAt' | 'updatedAt'> | null): Card {
+export function normalizeCardForPersistence(card: CardData, board?: Pick<Board, 'createdAt' | 'updatedAt'> | null): CardData {
   return {
     ...card,
     thumbnailPlan: card.thumbnailPlan
@@ -68,7 +68,7 @@ export function normalizeCardForPersistence(card: Card, board?: Pick<Board, 'cre
   };
 }
 
-export function getCardDataQuality(card: Card): DataQuality {
+export function getCardDataQuality(card: CardData): DataQuality {
   const hasTimestamps = !!card.createdAt && !!card.updatedAt;
   const hasHistory = !!card.columnHistory && card.columnHistory.length > 0;
 
@@ -77,7 +77,7 @@ export function getCardDataQuality(card: Card): DataQuality {
   return 'missing';
 }
 
-export function getBoardDataQuality(cards: Card[]): DataQuality {
+export function getBoardDataQuality(cards: CardData[]): DataQuality {
   if (cards.length === 0) return 'missing';
 
   const completeCards = cards.filter((card) => getCardDataQuality(card) === 'complete').length;

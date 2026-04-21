@@ -1,9 +1,9 @@
 import { X, Film, Zap } from 'lucide-react';
-import type { Card as CardType } from '../../types';
+import type { CardData } from '../../types';
 import type { CardActions, CardAiState, PhaseConfig } from './types';
 
 interface CardModalHeaderProps {
-  card: CardType;
+  card: CardData;
   phase: PhaseConfig;
   actions: CardActions;
   ai: CardAiState;

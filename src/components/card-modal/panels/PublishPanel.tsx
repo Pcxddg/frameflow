@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Pencil } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import type { Card as CardType } from '../../../types';
+import type { CardData } from '../../../types';
 import type { CardActions, CardAiState, CardDerived } from '../types';
 import { PanelShell } from '../shared/PanelShell';
 import { CollapsedPreview } from '../shared/CollapsedPreview';
@@ -14,7 +14,7 @@ import { subtleButtonStyle, flowPrimaryActionStyle, raisedPanelStyle } from '../
 import { isExecutionPublishReady, trackProductEvent } from '../../../lib/analytics';
 
 interface PublishPanelProps {
-  card: CardType;
+  card: CardData;
   expanded: boolean;
   onToggle: () => void;
   actions: CardActions;
@@ -65,7 +65,7 @@ export function PublishPanel({ card, expanded, onToggle, actions, ai, derived, r
       || draft.keywords.trim() !== (card.keywords || '').trim()
       || draft.seoSource.trim() !== (card.seoSourceText || '').trim();
 
-    const updates: Partial<CardType> = {
+    const updates: Partial<CardData> = {
       description: draft.description,
       keywords: draft.keywords,
       seoSourceText: draft.seoSource,
